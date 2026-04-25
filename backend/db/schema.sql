@@ -71,3 +71,17 @@ CREATE TABLE IF NOT EXISTS simulation_sessions (
   start_time TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
   end_time TIMESTAMP
 );
+CREATE TABLE IF NOT EXISTS gateway_status_logs (
+  id SERIAL PRIMARY KEY,
+  gateway_id VARCHAR(50) REFERENCES gateways(id) ON DELETE CASCADE,
+  old_status VARCHAR(50),
+  new_status VARCHAR(50),
+  reason TEXT,
+  timestamp TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+
+CREATE TABLE IF NOT EXISTS heartbeat_logs (
+  id SERIAL PRIMARY KEY,
+  gateway_id VARCHAR(50) REFERENCES gateways(id) ON DELETE CASCADE,
+  timestamp TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);

@@ -1,16 +1,58 @@
 const db = require('../db');
+const crypto = require('node:crypto');
 
 class SimulationEngine {
   constructor() {
     this.trafficInterval = null;
     this.healthInterval = null;
-    this.trafficRate = 5000; // 5 seconds default
+    this.defaultTrafficRate = 5000;
   }
 
   start() {
     console.log('[SimulationEngine] Starting engines...');
-    this.healthInterval = setInterval(() => this.checkGatewaysHealth(), 10000);
-    this.trafficInterval = setInterval(() => this.generateTraffic(), this.trafficRate);
+    console.log('[SimulationEngine] Crypto check:', typeof crypto.randomBytes === 'function' ? 'OK' : 'FAIL');
+    // Poll health every 5s, but check against individual HB intervals
+    this.healthInterval = setInterval(() => this.checkGatewaysHealth(), 5000);
+    // Poll traffic frequently (every 1s), but only fire for gateways based on their traffic_rate
+    this.trafficInterval = setInterval(() => this.generateTraffic(), 1000);
+    // Send heartbeats every 2s
+    this.hbInterval = setInterval(() => this.sendHeartbeats(), 2000);
+    
+    this.lastTrafficFire = {}; // Track last fire time per gateway
+    this.lastHeartbeatFire = {}; // Track last heartbeat time per gateway
+  }
+
+  async sendHeartbeats() {
+    try {
+        const enabledGateways = await db.query(`SELECT id, heartbeat_interval FROM gateways WHERE is_enabled = true`);
+        const now = Date.now();
+        
+        for (let gw of enabledGateways.rows) {
+            const lastHb = this.lastHeartbeatFire[gw.id] || 0;
+            const intervalMs = (gw.heartbeat_interval || 10) * 1000;
+
+            if (now - lastHb >= intervalMs) {
+                // Update heartbeat timestamp
+                await db.query(`UPDATE gateways SET last_heartbeat = NOW() WHERE id = $1`, [gw.id]);
+                await db.query(`INSERT INTO heartbeat_logs (gateway_id) VALUES ($1)`, [gw.id]);
+                this.lastHeartbeatFire[gw.id] = now;
+
+                // Auto-recovery: If it was offline but is enabled and sending heartbeats, mark it online
+                const currentGw = await db.query('SELECT status FROM gateways WHERE id = $1', [gw.id]);
+                if (currentGw.rows[0].status === 'offline') {
+                    await db.query(`UPDATE gateways SET status = 'online' WHERE id = $1`, [gw.id]);
+                    await db.query(`INSERT INTO gateway_status_logs (gateway_id, old_status, new_status, reason) 
+                                   VALUES ($1, 'offline', 'online', 'Heartbeat detected - Auto-recovery sequence')`, [gw.id]);
+                    await db.query(
+                        `INSERT INTO alerts (gateway_id, severity, message) VALUES ($1, $2, $3)`,
+                        [gw.id, 'INFO', `Gateway ${gw.id} has recovered and is now back online.`]
+                    );
+                }
+            }
+        }
+    } catch (e) {
+        console.error('[Engine Error] Heartbeat sender:', e);
+    }
   }
 
   async checkGatewaysHealth() {
@@ -20,12 +62,15 @@ class SimulationEngine {
         const now = new Date();
         const lastHb = new Date(gw.last_heartbeat || now);
         const diff = (now - lastHb) / 1000;
-        
-        if (diff > 30 && gw.status === 'online') {
+        const threshold = (gw.heartbeat_interval || 10) * 3; 
+
+        if (diff > threshold && gw.status === 'online') {
           await db.query(`UPDATE gateways SET status = 'offline' WHERE id = $1`, [gw.id]);
+          await db.query(`INSERT INTO gateway_status_logs (gateway_id, old_status, new_status, reason) 
+                         VALUES ($1, 'online', 'offline', 'Heartbeat timeout threshold exceeded')`, [gw.id]);
           await db.query(
             `INSERT INTO alerts (gateway_id, severity, message) VALUES ($1, $2, $3)`,
-            [gw.id, 'CRITICAL', `Gateway ${gw.id} missed heartbeat and went offline.`]
+            [gw.id, 'CRITICAL', `Gateway ${gw.id} missed multiple heartbeats and is now offline.`]
           );
         }
       }
@@ -36,59 +81,47 @@ class SimulationEngine {
 
   async generateTraffic() {
     try {
-      const activeGateways = await db.query(`SELECT id FROM gateways WHERE status = 'online' AND is_enabled = true`);
+      const activeGateways = await db.query(`SELECT * FROM gateways WHERE status = 'online' AND is_enabled = true`);
       if (activeGateways.rows.length === 0) return;
 
-      const gwIds = activeGateways.rows.map(g => g.id);
-      const devices = await db.query(`SELECT * FROM devices WHERE gateway_id = ANY($1)`, [gwIds]);
+      const now = Date.now();
 
-      for (let dev of devices.rows) {
-        const isSecure = Math.random() > 0.3; // 70% secure
-        const payloadSize = Math.floor(Math.random() * 500) + 50; 
-        const latency = Math.floor(Math.random() * 200) + 10;
-        
-        const activeAttacks = await db.query(`SELECT * FROM attack_logs WHERE target_gateway_id = $1 ORDER BY timestamp DESC LIMIT 1`, [dev.gateway_id]);
-        
-        let finalPayload = payloadSize;
-        let finalLatency = latency;
-        
-        if (activeAttacks.rows.length > 0) {
-          const attack = activeAttacks.rows[0];
-          const attackAge = (new Date() - new Date(attack.timestamp)) / 1000;
-          if (attackAge < 300) { // attack active for 5 minutes
-            if (attack.type === 'DDoS') {
-              finalPayload += Math.floor(Math.random() * 5000); 
-              finalLatency += 500;
-            } else if (attack.type === 'Malicious Payload') {
-               finalPayload = 9999;
-               finalLatency += 200;
-            }
+      for (let gw of activeGateways.rows) {
+        const lastFire = this.lastTrafficFire[gw.id] || 0;
+        const rate = gw.traffic_rate || this.defaultTrafficRate;
+
+        if (now - lastFire < rate) continue;
+        this.lastTrafficFire[gw.id] = now;
+
+        const devices = await db.query(`SELECT * FROM devices WHERE gateway_id = $1 AND status = 'active'`, [gw.id]);
+
+        for (let dev of devices.rows) {
+          const isSecure = Math.random() > 0.3; 
+          const latency = Math.floor(Math.random() * 200) + 10;
+          
+          // Generate context-aware data
+          let payload;
+          if (dev.type === 'Sensor') {
+              payload = JSON.stringify({ temp: (Math.random()*30 + 10).toFixed(2), hum: (Math.random()*50 + 30).toFixed(0), unit: 'C' });
+          } else if (dev.type === 'Camera') {
+              payload = `IMAGE_DATA:0x${crypto.randomBytes(16).toString('hex')}`;
+          } else if (dev.type === 'Motion') {
+              payload = JSON.stringify({ motion: Math.random() > 0.8, zone: 'A1', sensitivity: 0.9 });
+          } else {
+              payload = `CMD_ACK:${Math.random() > 0.5 ? 'SUCCESS' : 'PENDING'}`;
           }
-        }
 
-        // Anomaly logic
-        if (finalPayload > 1000) {
+          const payloadSize = Buffer.byteLength(payload);
+
           await db.query(
-            `INSERT INTO alerts (gateway_id, severity, message) VALUES ($1, $2, $3)`,
-            [dev.gateway_id, 'WARNING', `Anomalous payload spike detected from device ${dev.id}: ${finalPayload} bytes`]
+            `INSERT INTO traffic_logs (device_id, gateway_id, payload_size, is_secure, latency, status, payload)
+             VALUES ($1, $2, $3, $4, $5, 'success', $6)`,
+            [dev.id, dev.gateway_id, payloadSize, isSecure, latency, payload]
           );
+
+          // Update device view with last payload
+          await db.query(`UPDATE devices SET last_payload = $1 WHERE id = $2`, [payload, dev.id]);
         }
-
-        if (finalLatency > 400) {
-           await db.query(
-            `INSERT INTO alerts (gateway_id, severity, message) VALUES ($1, $2, $3)`,
-            [dev.gateway_id, 'WARNING', `High latency detected on gateway. Latency: ${finalLatency} ms`]
-          );
-        }
-
-        await db.query(
-          `INSERT INTO traffic_logs (device_id, gateway_id, payload_size, is_secure, latency, status)
-           VALUES ($1, $2, $3, $4, $5, 'success')`,
-          [dev.id, dev.gateway_id, finalPayload, isSecure, finalLatency]
-        );
-
-        // Update heartbeat
-        await db.query(`UPDATE gateways SET last_heartbeat = NOW() WHERE id = $1`, [dev.gateway_id]);
       }
     } catch (error) {
       console.error('[Engine Error] Traffic generation:', error);

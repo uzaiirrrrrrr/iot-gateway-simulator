@@ -72,6 +72,24 @@ exports.triggerAttack = async (req, res) => {
   }
 };
 
+exports.getTrafficLogs = async (req, res) => {
+  try {
+    const { limit = 100, offset = 0 } = req.query;
+    const result = await db.query(`
+      SELECT t.*, d.name as device_name, g.name as gateway_name 
+      FROM traffic_logs t
+      LEFT JOIN devices d ON t.device_id = d.id
+      LEFT JOIN gateways g ON t.gateway_id = g.id
+      ORDER BY t.timestamp DESC 
+      LIMIT $1 OFFSET $2
+    `, [limit, offset]);
+    res.json(result.rows);
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ message: 'Server error' });
+  }
+};
+
 exports.clearLogs = async (req, res) => {
   try {
     // Only Admin can do this

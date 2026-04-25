@@ -6,6 +6,7 @@ const { verifyToken, requireRole } = require('../middleware/auth');
 router.use(verifyToken);
 
 router.get('/traffic', analyticsController.getTrafficStats);
+router.get('/traffic-logs', analyticsController.getTrafficLogs);
 router.get('/alerts', analyticsController.getAlerts);
 router.get('/audit', requireRole(['Admin']), analyticsController.getAuditLogs);
 router.post('/attack', requireRole(['Admin']), analyticsController.triggerAttack);

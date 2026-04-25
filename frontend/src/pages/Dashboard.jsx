@@ -12,7 +12,7 @@ import {
   Filler
 } from 'chart.js';
 import { Line } from 'react-chartjs-2';
-import { Activity, Server, AlertTriangle } from 'lucide-react';
+import { Activity, Server, AlertTriangle, Shield, Database, Clock, Info } from 'lucide-react';
 
 ChartJS.register(CategoryScale, LinearScale, PointElement, LineElement, Title, Tooltip, Legend, Filler);
 
@@ -71,74 +71,114 @@ const Dashboard = () => {
   const onlineGWs = gateways.filter(g => g.status === 'online').length;
 
   return (
-    <div className="space-y-6 max-w-7xl mx-auto animate-fade-in">
-      {/* Stats Cards */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-        <div className="bg-white rounded-xl shadow-sm border border-slate-100 p-6 flex items-center justify-between hover:shadow-md transition-shadow">
-          <div>
-            <p className="text-sm font-medium text-slate-500 mb-1">Active Gateways</p>
-            <p className="text-3xl font-bold text-slate-800">{onlineGWs} <span className="text-lg text-slate-400 font-normal">/ {gateways.length}</span></p>
+    <div className="space-y-8 max-w-7xl mx-auto animate-fade-in pb-12">
+      {/* Premium Stats Header */}
+      <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
+        {[
+          { label: 'Network Nodes', value: gateways.length, sub: 'Hardware segments', icon: Server, color: 'blue', trend: 'Stable' },
+          { label: 'Active Signals', value: onlineGWs, sub: 'Real-time heartbeats', icon: Activity, color: 'emerald', trend: '+12%' },
+          { label: 'Threat Alerts', value: alerts.length, sub: 'System anomalies', icon: AlertTriangle, color: 'red', trend: 'Low' },
+          { label: 'Global Traffic', value: trafficData.length > 0 ? (Math.max(...trafficData.map(d => d.packets || 0))) : 0, sub: 'Packets/min', icon: Shield, color: 'indigo', trend: 'Active' }
+        ].map(stat => (
+          <div key={stat.label} className="bg-white rounded-[2rem] shadow-xl shadow-slate-200/50 border border-slate-100 p-8 hover:-translate-y-2 transition-all duration-300">
+             <div className="flex justify-between items-start mb-6">
+                <div className={`p-4 bg-${stat.color}-50 text-${stat.color}-600 rounded-2xl`}>
+                   <stat.icon size={24} />
+                </div>
+                <span className={`text-[10px] font-black uppercase px-2 py-1 rounded-full bg-${stat.color}-50 text-${stat.color}-700 border border-${stat.color}-100`}>
+                   {stat.trend}
+                </span>
+             </div>
+             <div className="text-3xl font-black text-slate-900 mb-1">{stat.value}</div>
+             <div className="text-sm font-bold text-slate-400 uppercase tracking-widest">{stat.label}</div>
+             <div className="text-[10px] text-slate-300 font-medium italic mt-2">{stat.sub}</div>
           </div>
-          <div className="p-4 bg-blue-50 text-blue-600 rounded-full">
-            <Server size={24} />
-          </div>
-        </div>
-
-        <div className="bg-white rounded-xl shadow-sm border border-slate-100 p-6 flex items-center justify-between hover:shadow-md transition-shadow">
-          <div>
-            <p className="text-sm font-medium text-slate-500 mb-1">Peak Throughput</p>
-            <p className="text-3xl font-bold text-slate-800">
-              {trafficData.length > 0 ? Math.max(...trafficData.map(d => parseInt(d.total_bytes))).toLocaleString() : 0} <span className="text-lg text-slate-400 font-normal">B/m</span>
-            </p>
-          </div>
-          <div className="p-4 bg-emerald-50 text-emerald-600 rounded-full">
-            <Activity size={24} />
-          </div>
-        </div>
-
-        <div className="bg-white rounded-xl shadow-sm border border-slate-100 p-6 flex items-center justify-between hover:shadow-md transition-shadow">
-          <div>
-            <p className="text-sm font-medium text-slate-500 mb-1">Recent Alerts</p>
-            <p className="text-3xl font-bold text-red-500">{alerts.filter(a => a.severity === 'CRITICAL' || a.severity === 'WARNING').length}</p>
-          </div>
-          <div className="p-4 bg-red-50 text-red-600 rounded-full">
-            <AlertTriangle size={24} />
-          </div>
-        </div>
+        ))}
       </div>
 
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-        {/* Main Chart */}
-        <div className="lg:col-span-2 bg-white rounded-xl shadow-sm border border-slate-100 p-6">
-          <div className="flex justify-between items-center mb-6">
-            <h3 className="text-lg font-semibold text-slate-800">Live Traffic Throughput</h3>
-            <span className="flex h-3 w-3 relative">
-              <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
-              <span className="relative inline-flex rounded-full h-3 w-3 bg-emerald-500"></span>
-            </span>
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+        {/* Analytics Hub */}
+        <div className="lg:col-span-2 space-y-8">
+          <div className="bg-slate-900 rounded-[2.5rem] shadow-2xl p-10 border border-slate-800">
+            <div className="flex justify-between items-center mb-8">
+              <div>
+                <h3 className="text-xl font-black text-white tracking-tight">Signal Throughput Analytics</h3>
+                <p className="text-xs text-slate-500 font-bold uppercase tracking-widest mt-1">Real-time spectral analysis</p>
+              </div>
+              <div className="flex items-center gap-2 px-4 py-2 bg-emerald-500/10 rounded-full border border-emerald-500/20">
+                <div className="h-2 w-2 rounded-full bg-emerald-500 animate-pulse" />
+                <span className="text-[10px] font-black text-emerald-500 uppercase tracking-widest">Master Node: Active</span>
+              </div>
+            </div>
+            <div className="h-80">
+              <Line data={chartData} options={{...options, scales: { ...options.scales, y: { ...options.scales.y, grid: { color: 'rgba(255,255,255,0.05)' }, border: { display: false } }, x: { grid: { display: false }, border: { display: false } } } }} />
+            </div>
           </div>
-          <div className="h-72">
-            <Line data={chartData} options={options} />
+
+          {/* Quick Action Map (Visual context) */}
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+             <div className="bg-blue-600 rounded-3xl p-8 text-white relative overflow-hidden group">
+                <div className="relative z-10">
+                   <h4 className="text-xl font-black mb-2">Protocol Shield</h4>
+                   <p className="text-sm text-blue-100 mb-6">Active packet inspection enabled on all ingress points.</p>
+                   <div className="flex items-center gap-3">
+                      <div className="h-1 w-24 bg-blue-400 rounded-full overflow-hidden">
+                         <div className="h-full bg-white w-3/4 animate-shimmer" />
+                      </div>
+                      <span className="text-xs font-bold uppercase">75% Secure</span>
+                   </div>
+                </div>
+                <Shield className="absolute -right-8 -bottom-8 opacity-10 group-hover:scale-125 transition-transform duration-700" size={160} />
+             </div>
+             <div className="bg-white rounded-3xl p-8 border border-slate-200 shadow-sm hover:shadow-xl transition-all">
+                <Database size={32} className="text-indigo-600 mb-4" />
+                <h4 className="text-xl font-black text-slate-800 mb-2">Metadata Sync</h4>
+                <p className="text-sm text-slate-500 mb-4">Firmware registry synchronized with local storage.</p>
+                <div className="flex -space-x-2">
+                   {[1,2,3].map(i => <div key={i} className="h-8 w-8 rounded-full border-2 border-white bg-slate-200" />)}
+                   <div className="h-8 w-8 rounded-full border-2 border-white bg-blue-600 flex items-center justify-center text-[10px] font-bold text-white uppercase">+4</div>
+                </div>
+             </div>
           </div>
         </div>
 
-        {/* Recent Alerts Feed */}
-        <div className="bg-white rounded-xl shadow-sm border border-slate-100 p-6 flex flex-col">
-          <h3 className="text-lg font-semibold text-slate-800 mb-4">Monitoring Feed</h3>
-          <div className="flex-1 overflow-y-auto pr-2 space-y-4">
-            {alerts.length === 0 ? (
-              <p className="text-slate-500 text-sm italic">No recent alerts or events.</p>
-            ) : (
-              alerts.map(alert => (
-                <div key={alert.id} className={`p-4 rounded-lg border-l-4 transition-all hover:-translate-x-1 hover:shadow-sm ${alert.severity === 'CRITICAL' ? 'border-red-500 bg-red-50 text-red-900' : alert.severity === 'WARNING' ? 'border-amber-500 bg-amber-50 text-amber-900' : 'border-blue-500 bg-blue-50 text-blue-900'}`}>
-                  <div className="flex justify-between items-start mb-1 text-xs font-semibold">
-                    <span>{alert.severity}</span>
-                    <span className="opacity-70">{new Date(alert.timestamp).toLocaleTimeString()}</span>
-                  </div>
-                  <p className="text-sm font-medium">{alert.message}</p>
+        {/* Intelligence Feed */}
+        <div className="space-y-8">
+          <div className="bg-white rounded-[2.5rem] shadow-xl border border-slate-100 flex flex-col h-full overflow-hidden">
+            <div className="p-8 border-b border-slate-50">
+              <h3 className="text-lg font-black text-slate-800 uppercase tracking-tight">Security Journal</h3>
+              <p className="text-[10px] text-slate-400 font-bold uppercase tracking-widest mt-1">Classification: Level-3 Only</p>
+            </div>
+            <div className="p-8 space-y-6 flex-1 overflow-y-auto custom-scrollbar">
+              {alerts.length === 0 ? (
+                <div className="flex flex-col items-center justify-center py-20 text-slate-300">
+                   <Clock size={48} className="mb-4 opacity-20" />
+                   <p className="text-xs font-bold uppercase tracking-[0.2em]">Silent Buffer</p>
                 </div>
-              ))
-            )}
+              ) : (
+                alerts.map(alert => (
+                  <div key={alert.id} className="relative pl-10 group">
+                    <div className={`absolute left-0 top-1 h-6 w-6 rounded-lg flex items-center justify-center ${alert.severity === 'CRITICAL' ? 'bg-red-100 text-red-600' : 'bg-blue-100 text-blue-600'}`}>
+                       {alert.severity === 'CRITICAL' ? <AlertTriangle size={14} /> : <Info size={14} />}
+                    </div>
+                    {alert !== alerts[alerts.length-1] && <div className="absolute left-3 top-8 bottom-0 w-[2px] bg-slate-100" />}
+                    
+                    <div className="mb-1 flex justify-between items-center">
+                       <span className="text-[9px] font-black text-slate-400 uppercase tracking-widest">{new Date(alert.timestamp).toLocaleTimeString()}</span>
+                       <span className={`text-[8px] font-bold px-1.5 py-0.5 rounded ${alert.severity === 'CRITICAL' ? 'text-red-600 bg-red-50' : 'text-blue-600 bg-blue-50'}`}>{alert.severity}</span>
+                    </div>
+                    <p className="text-sm font-bold text-slate-700 leading-tight group-hover:text-blue-600 transition-colors">
+                       {alert.message}
+                    </p>
+                  </div>
+                ))
+              )}
+            </div>
+            <div className="p-6 bg-slate-50 border-t border-slate-100">
+               <button className="w-full py-3 text-xs font-black text-slate-400 uppercase tracking-widest hover:text-blue-600 transition-colors">
+                  Access Full Intelligence Logs
+               </button>
+            </div>
           </div>
         </div>
       </div>
