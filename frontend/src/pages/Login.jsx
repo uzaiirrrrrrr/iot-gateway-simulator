@@ -16,7 +16,7 @@ const Login = () => {
     setError('');
     try {
       await login(email, password, rememberMe);
-      navigate('/dashboard');
+      navigate('/gateways');
     } catch (err) {
       setError(err.response?.data?.message || 'Login failed. Please check credentials.');
     }
@@ -33,7 +33,7 @@ const Login = () => {
           </div>
           <h2 className="text-2xl font-bold text-center text-white mb-2">IoT Simulator</h2>
           <p className="text-center text-slate-400 mb-8">Secure Gateway Management Platform</p>
-          
+
           {error && (
             <div className="bg-red-500/10 border border-red-500/50 text-red-400 px-4 py-3 rounded mb-6 text-sm">
               {error}
