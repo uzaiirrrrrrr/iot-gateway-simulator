@@ -3,7 +3,6 @@ import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-d
 import { AuthProvider } from './context/AuthContext';
 import Login from './pages/Login';
 import Register from './pages/Register';
-import Dashboard from './pages/Dashboard';
 import Gateways from './pages/Gateways';
 import Devices from './pages/Devices';
 
@@ -19,8 +18,7 @@ function App() {
           <Route path="/register" element={<Register />} />
 
           <Route path="/" element={<PrivateRoute><Layout /></PrivateRoute>}>
-            <Route index element={<Navigate to="/dashboard" replace />} />
-            <Route path="dashboard" element={<Dashboard />} />
+            <Route index element={<Navigate to="/gateways" replace />} />
             <Route path="gateways" element={<Gateways />} />
             <Route path="devices" element={<Devices />} />
           </Route>
