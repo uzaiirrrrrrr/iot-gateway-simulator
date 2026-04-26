@@ -20,7 +20,11 @@ A high-fidelity, production-ready IoT Gateway Simulator developed for a Final Ye
 2. **Setup**: 
    - Configure `.env` in the `backend/` directory.
    - Run `npm install` in both `frontend/` and `backend/` folders.
-3. **Launch**: Run the provided `run_simulator.bat` file to start both servers simultaneously.
+3. **Launch**: Open a terminal in the root directory and run:
+   ```bash
+   npm run dev
+   ```
+   *Alternatively, you can still run the provided `run_simulator.bat` file.*
 4. **Access**: Navigate to `http://localhost:5173` in your browser.
 
 ## 🛡️ Module Integration Matrix

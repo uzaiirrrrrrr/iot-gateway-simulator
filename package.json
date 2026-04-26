@@ -1,0 +1,15 @@
+{
+  "name": "iot-gateway-simulator-root",
+  "version": "1.0.0",
+  "description": "Unified runner for IoT Gateway Simulator",
+  "main": "index.js",
+  "scripts": {
+    "init-db": "node backend/scripts/init_db.js",
+    "dev": "npm.cmd run init-db && concurrently --kill-others \"npm.cmd run dev --prefix backend\" \"npm.cmd run dev --prefix frontend\"",
+    "install-all": "npm.cmd install && npm.cmd install --prefix backend && npm.cmd install --prefix frontend",
+    "start": "concurrently \"npm.cmd start --prefix backend\" \"npm.cmd start --prefix frontend\""
+  },
+  "devDependencies": {
+    "concurrently": "^9.1.2"
+  }
+}

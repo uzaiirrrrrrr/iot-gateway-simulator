@@ -97,6 +97,13 @@ const Layout = () => {
                 <LogOut size={18} className="group-hover:translate-x-0.5 transition-transform" />
                 <span>De-authenticate</span>
             </button>
+            <button 
+                onClick={handleLogoutAll}
+                className="flex items-center gap-3 text-slate-600 hover:text-amber-500 transition-all w-full px-3 py-2.5 rounded-xl hover:bg-amber-500/10 group text-sm font-bold"
+            >
+                <ShieldAlert size={18} className="group-hover:scale-110 transition-transform" />
+                <span>Terminate Global Session</span>
+            </button>
           </div>
         </div>
       </div>
@@ -130,7 +137,7 @@ const Layout = () => {
           </div>
         </header>
 
-        <main className="flex-1 p-10 overflow-y-auto relative z-0 custom-scrollbar">
+        <main className="flex-1 p-10 overflow-y-auto relative custom-scrollbar">
           <motion.div
             initial={{ opacity: 0, scale: 0.98 }}
             animate={{ opacity: 1, scale: 1 }}

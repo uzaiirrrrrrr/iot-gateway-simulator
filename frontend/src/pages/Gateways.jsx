@@ -259,7 +259,7 @@ const Gateways = () => {
 
       {/* Settings Modal Overlay */}
       {editingSettings && (
-          <div className="fixed inset-0 bg-slate-950/80 backdrop-blur-md z-50 flex items-center justify-center p-6">
+          <div className="fixed inset-0 bg-slate-950/80 backdrop-blur-md z-[999] flex items-center justify-center p-6">
               <motion.div 
                 initial={{ scale: 0.9, opacity: 0, y: 20 }}
                 animate={{ scale: 1, opacity: 1, y: 0 }}
@@ -333,7 +333,7 @@ const Gateways = () => {
 
       {/* Diagnostics Modal */}
       {selectedGatewayLogs && (
-          <div className="fixed inset-0 bg-slate-950/90 backdrop-blur-lg z-50 flex items-center justify-center p-6">
+          <div className="fixed inset-0 bg-slate-950/90 backdrop-blur-lg z-[999] flex items-center justify-center p-6">
               <motion.div 
                 initial={{ opacity: 0, scale: 0.95 }} animate={{ opacity: 1, scale: 1 }}
                 className="bg-[#0a0c1a] w-full max-w-5xl max-h-[85vh] rounded-[3rem] shadow-[0_0_150px_rgba(0,0,0,0.8)] overflow-hidden flex flex-col border border-slate-800/50"

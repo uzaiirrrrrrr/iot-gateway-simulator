@@ -93,7 +93,7 @@ const Devices = () => {
 
   // Pagination
   const [currentPage, setCurrentPage] = useState(1);
-  const itemsPerPage = viewMode === 'grid' ? 8 : 10;
+  const itemsPerPage = 3; // 3 Gateways per page
 
   const fetchData = async () => {
     try {
@@ -143,6 +143,11 @@ const Devices = () => {
     const interval = setInterval(fetchData, 8000); // Poll every 8s
     return () => clearInterval(interval);
   }, []);
+
+  // Reset to page 1 when filters change
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [searchTerm, typeFilter]);
 
   const handleDragStart = (event) => setActiveId(event.active.id);
   
@@ -247,8 +252,8 @@ const Devices = () => {
         return 0;
     });
 
-  const totalPages = Math.ceil(filteredDevices.length / itemsPerPage);
-  const currentItems = filteredDevices.slice((currentPage - 1) * itemsPerPage, currentPage * itemsPerPage);
+  const totalPages = Math.ceil(gateways.length / itemsPerPage);
+  const gatewaysToRender = gateways.slice((currentPage - 1) * itemsPerPage, currentPage * itemsPerPage);
 
   if (loading && gateways.length === 0) {
     return (
@@ -416,13 +421,14 @@ const Devices = () => {
 
         {/* Board View (DND Optimized) */}
         <div className="space-y-16">
-            {gateways.length === 0 ? (
+            {gatewaysToRender.length === 0 ? (
                 <div className="bg-slate-900/20 p-24 rounded-[3rem] border border-dashed border-slate-800 text-center text-slate-600 font-bold uppercase tracking-widest text-sm">
-                    No infrastructure units detected for mapping.
+                    No infrastructure units available on this page.
                 </div>
-            ) : gateways.map(gtw => (
-                <GatewayDropZone key={gtw.id} gateway={gtw}>
-                    <div className="bg-slate-900/40 backdrop-blur-xl rounded-[3rem] border border-slate-800/50 shadow-2xl overflow-hidden transition-all relative">
+            ) : (
+                gatewaysToRender.map(gtw => (
+                    <GatewayDropZone key={gtw.id} gateway={gtw}>
+                        <div className="bg-slate-900/40 backdrop-blur-xl rounded-[3rem] border border-slate-800/50 shadow-2xl overflow-hidden transition-all relative">
                         <div className={`p-8 border-b border-slate-800/30 flex items-center justify-between ${gtw.is_enabled ? 'bg-slate-900/20' : 'bg-red-950/10'}`}>
                             <div className="flex items-center gap-6">
                                 <div className={`p-4 rounded-2xl transition-all duration-500 ${gtw.is_enabled ? 'bg-purple-600 text-white shadow-[0_0_30px_rgba(168,85,247,0.3)]' : 'bg-slate-800 text-slate-500'}`}>
@@ -443,15 +449,12 @@ const Devices = () => {
                         </div>
 
                         <div className="p-10 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-8 min-h-[220px]">
-                            {devices.filter(d => d.gateway_id === gtw.id).length === 0 ? (
+                            {filteredDevices.filter(d => d.gateway_id === gtw.id).length === 0 ? (
                                 <div className="col-span-full flex flex-col items-center justify-center py-12 text-slate-700 gap-4 border-2 border-dashed border-slate-800/50 rounded-[2.5rem] bg-slate-950/20">
                                     <Cpu size={48} className="opacity-20"/>
                                     <p className="text-[10px] font-black uppercase tracking-[0.3em] opacity-40">Segment Unpopulated</p>
                                 </div>
-                            ) : devices.filter(d => d.gateway_id === gtw.id).map(dev => {
-                                const visible = (typeFilter === 'all' || dev.type === typeFilter) && (dev.name.toLowerCase().includes(searchTerm.toLowerCase()));
-                                if (!visible) return null;
-
+                            ) : filteredDevices.filter(d => d.gateway_id === gtw.id).map(dev => {
                                 return (
                                     <DraggableDevice key={dev.id} device={dev}>
                                         <motion.div 
@@ -527,13 +530,66 @@ const Devices = () => {
                         </div>
                     </div>
                 </GatewayDropZone>
-            ))}
+            ))
+        )}
         </div>
+
+        {/* Pagination Controls */}
+        {gateways.length > 0 && (
+            <div className="flex flex-col md:flex-row items-center justify-between gap-6 bg-slate-900/40 p-8 rounded-[2.5rem] border border-slate-800/50 backdrop-blur-md shadow-2xl">
+                <div className="text-[10px] font-black text-slate-500 uppercase tracking-[0.3em]">
+                    Showing Gateways <span className="text-white">{(currentPage-1)*itemsPerPage + 1} - {Math.min(currentPage*itemsPerPage, gateways.length)}</span> of <span className="text-white">{gateways.length}</span>
+                </div>
+                
+                <div className="flex items-center gap-3">
+                    <button 
+                        disabled={currentPage === 1}
+                        onClick={() => setCurrentPage(prev => Math.max(1, prev - 1))}
+                        className="p-4 bg-slate-950 border border-slate-800 rounded-2xl text-slate-400 hover:text-white disabled:opacity-20 disabled:cursor-not-allowed transition-all hover:border-purple-500/50 group"
+                    >
+                        <ChevronLeft size={20} className="group-hover:-translate-x-0.5 transition-transform" />
+                    </button>
+                    
+                    <div className="flex items-center gap-2 px-2">
+                        {Array.from({ length: totalPages }, (_, i) => i + 1).map(page => {
+                            // Show limited page numbers if there are too many
+                            if (totalPages > 7) {
+                                if (page !== 1 && page !== totalPages && Math.abs(page - currentPage) > 1) {
+                                    if (Math.abs(page - currentPage) === 2) return <span key={page} className="text-slate-700">...</span>;
+                                    return null;
+                                }
+                            }
+                            return (
+                                <button
+                                    key={page}
+                                    onClick={() => setCurrentPage(page)}
+                                    className={`w-12 h-12 rounded-2xl text-xs font-black transition-all ${
+                                        currentPage === page 
+                                        ? 'bg-purple-600 text-white shadow-[0_0_25px_rgba(168,85,247,0.4)]' 
+                                        : 'bg-slate-950/50 text-slate-500 hover:text-white border border-slate-800/50 hover:bg-slate-900'
+                                    }`}
+                                >
+                                    {page}
+                                </button>
+                            );
+                        })}
+                    </div>
+
+                    <button 
+                        disabled={currentPage === totalPages}
+                        onClick={() => setCurrentPage(prev => Math.min(totalPages, prev + 1))}
+                        className="p-4 bg-slate-950 border border-slate-800 rounded-2xl text-slate-400 hover:text-white disabled:opacity-20 disabled:cursor-not-allowed transition-all hover:border-purple-500/50 group"
+                    >
+                        <ChevronRight size={20} className="group-hover:translate-x-0.5 transition-transform" />
+                    </button>
+                </div>
+            </div>
+        )}
 
         {/* Metadata Slide-over */}
         <AnimatePresence>
             {selectedDeviceMetadata && (
-                <div className="fixed inset-0 z-50 flex justify-end">
+                <div className="fixed inset-0 z-[999] flex justify-end">
                     <motion.div 
                         initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
                         onClick={() => setSelectedDeviceMetadata(null)}

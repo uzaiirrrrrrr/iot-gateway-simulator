@@ -7,7 +7,7 @@ const validateEmail = (email) => {
   return String(email)
     .toLowerCase()
     .match(
-      /^[a-zA-Z0-9._%+-]{5,}@gmail\.com$/
+      /^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/
     );
 };
 

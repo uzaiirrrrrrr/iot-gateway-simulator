@@ -44,26 +44,37 @@ export const AuthProvider = ({ children }) => {
     setLoading(false);
   }, [token, logout]);
 
-  // Inactivity Timer (15 minutes)
+  // Inactivity Timer (Improved)
   useEffect(() => {
     if (!token) return;
 
     let timer;
-    const resetTimer = () => {
-      if (timer) clearTimeout(timer);
-      timer = setTimeout(() => {
-        console.log('Inactivity timeout reaching... logging out.');
-        logout();
-      }, 15 * 60 * 1000); 
+    const INACTIVITY_TIMEOUT = 15 * 60 * 1000; // 15 Minutes
+
+    const performLogout = () => {
+      console.log('Session expired due to inactivity.');
+      alert('Your session has expired due to inactivity. Please log in again.');
+      logout();
     };
 
-    window.addEventListener('mousemove', resetTimer);
-    window.addEventListener('keypress', resetTimer);
+    const resetTimer = () => {
+      if (timer) clearTimeout(timer);
+      timer = setTimeout(performLogout, INACTIVITY_TIMEOUT);
+    };
+
+    // Events that count as activity
+    const activityEvents = ['mousemove', 'keypress', 'mousedown', 'scroll', 'touchstart', 'click'];
+    
+    activityEvents.forEach(event => {
+      window.addEventListener(event, resetTimer);
+    });
+
     resetTimer();
 
     return () => {
-      window.removeEventListener('mousemove', resetTimer);
-      window.removeEventListener('keypress', resetTimer);
+      activityEvents.forEach(event => {
+        window.removeEventListener(event, resetTimer);
+      });
       if (timer) clearTimeout(timer);
     };
   }, [token, logout]);

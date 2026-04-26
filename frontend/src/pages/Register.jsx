@@ -39,7 +39,7 @@ const Register = () => {
         setEmailValid(null);
         return;
     }
-    const re = /^[a-zA-Z0-9._%+-]{5,}@gmail\.com$/;
+    const re = /^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/;
     setEmailValid(re.test(email));
   }, [email]);
 
