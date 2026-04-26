@@ -263,83 +263,84 @@ const Devices = () => {
 
   return (
     <DndContext sensors={sensors} onDragStart={handleDragStart} onDragEnd={handleDragEnd}>
-      <div className="space-y-6 pb-20">
+      <div className="space-y-10 pb-20 relative">
         {/* Quick Access Statistics Cards */}
         <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
             {[
-                { label: 'Total Managed', value: devices.length, color: 'blue', icon: Cpu, id: 'all' },
-                { label: 'Signaling/Active', value: devices.filter(d => d.status === 'active').length, color: 'emerald', icon: Activity, id: 'active' },
-                { label: 'Standby/Inactive', value: devices.filter(d => d.status === 'inactive').length, color: 'slate', icon: PowerOff, id: 'inactive' },
-                { label: 'Mapping Zones', value: gateways.length, color: 'indigo', icon: MapPin, id: 'zones' }
+                { label: 'Managed Assets', value: devices.length, color: 'purple', icon: Cpu, id: 'all' },
+                { label: 'Signal Active', value: devices.filter(d => d.status === 'active').length, color: 'emerald', icon: Activity, id: 'active' },
+                { label: 'Standby Mode', value: devices.filter(d => d.status === 'inactive').length, color: 'slate', icon: PowerOff, id: 'inactive' },
+                { label: 'Network Zones', value: gateways.length, color: 'blue', icon: MapPin, id: 'zones' }
             ].map(stat => (
                 <button 
                   key={stat.id}
-                  onClick={() => {
-                      if (stat.id === 'active' || stat.id === 'inactive') setTypeFilter('all'); // Clear type filter if filtering by status
-                      if (stat.id === 'active' || stat.id === 'inactive') {
-                          // Note: We don't have a dedicated status filter state here besides the filter function, 
-                          // but we can search for the status temporarily or just use this for "Quick Access" visual.
-                          // Actually, I'll add a simple status filter state to make it functional.
-                      }
-                  }}
-                  className="bg-white p-6 rounded-3xl border border-slate-200 text-left hover:border-blue-500 hover:shadow-xl transition-all group"
+                  className="bg-slate-900/40 border border-slate-800/50 p-8 rounded-[2rem] text-left hover:border-purple-500/30 transition-all group relative overflow-hidden backdrop-blur-sm"
                 >
-                    <div className="flex justify-between items-start mb-4">
-                        <div className={`p-3 rounded-2xl bg-${stat.color}-50 text-${stat.color}-600 group-hover:bg-${stat.color}-600 group-hover:text-white transition-all`}>
-                            <stat.icon size={22} />
+                    <div className="flex justify-between items-start mb-6 relative z-10">
+                        <div className={`p-4 rounded-2xl bg-slate-800 text-slate-400 group-hover:bg-purple-600 group-hover:text-white group-hover:shadow-[0_0_20px_rgba(168,85,247,0.4)] transition-all duration-500`}>
+                            <stat.icon size={24} />
                         </div>
-                        <div className="text-[10px] font-black text-slate-300 uppercase tracking-widest">Live</div>
+                        <div className="text-[10px] font-black text-slate-600 uppercase tracking-[0.2em]">Telemetry</div>
                     </div>
-                    <div className="text-3xl font-black text-slate-900">{stat.value}</div>
-                    <div className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mt-1">{stat.label}</div>
+                    <div className="text-4xl font-black text-white mb-1 relative z-10 tracking-tight">{stat.value}</div>
+                    <div className="text-[10px] font-bold text-slate-500 uppercase tracking-[0.2em] relative z-10">{stat.label}</div>
+                    
+                    <div className="absolute -bottom-6 -right-6 opacity-[0.02] group-hover:opacity-[0.05] transition-opacity duration-500">
+                        <stat.icon size={120} />
+                    </div>
                 </button>
             ))}
         </div>
 
         {/* Search & Tool Bar */}
-        <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4 bg-white p-4 rounded-2xl border border-slate-200 shadow-sm">
-          <div className="flex flex-1 items-center gap-3">
-              <div className="relative flex-1 max-w-sm">
-                  <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" size={18} />
+        <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-6 bg-slate-900/40 p-6 rounded-[2rem] border border-slate-800/50 backdrop-blur-md">
+          <div className="flex flex-1 items-center gap-4">
+              <div className="relative flex-1 max-w-md group">
+                  <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-500 group-focus-within:text-purple-400 transition-colors" size={18} />
                   <input
                       type="text"
-                      placeholder="Search device registry..."
+                      placeholder="Scan device registry..."
                       value={searchTerm}
                       onChange={(e) => setSearchTerm(e.target.value)}
-                      className="w-full pl-10 pr-4 py-2 bg-slate-50 border border-slate-200 rounded-xl outline-none focus:ring-2 focus:ring-blue-500/10 focus:border-blue-500 transition-all text-sm"
+                      className="w-full pl-12 pr-4 py-3 bg-slate-950/50 border border-slate-800 rounded-2xl outline-none focus:ring-4 focus:ring-purple-500/10 focus:border-purple-500/50 transition-all text-sm text-slate-300 placeholder:text-slate-700"
                   />
               </div>
-              <div className="flex items-center gap-1 bg-slate-100 p-1 rounded-lg text-xs font-bold uppercase tracking-tighter px-2 text-slate-400">
-                  <MousePointer2 size={14} className="mr-1"/> Drag to Map
+              <div className="hidden xl:flex items-center gap-2 bg-purple-500/5 border border-purple-500/10 p-2 px-4 rounded-xl text-[10px] font-black uppercase tracking-widest text-purple-400">
+                  <MousePointer2 size={14} />
+                  Drag to Re-Map Infrastructure
               </div>
               <button 
                   onClick={() => setShowGlobalMonitor(!showGlobalMonitor)}
-                  className={`flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-bold uppercase transition-all shadow-sm ${showGlobalMonitor ? 'bg-blue-600 text-white shadow-blue-500/20' : 'bg-white border border-slate-200 text-slate-500 hover:bg-slate-50'}`}
+                  className={`flex items-center gap-3 px-6 py-3 rounded-2xl text-xs font-black uppercase tracking-widest transition-all shadow-xl ${showGlobalMonitor ? 'bg-purple-600 text-white shadow-purple-900/20' : 'bg-slate-900 border border-slate-800 text-slate-400 hover:text-white hover:border-slate-600'}`}
               >
-                  <Terminal size={14} className={showGlobalMonitor ? 'animate-pulse' : ''} />
-                  Live Monitor
+                  <Terminal size={16} className={showGlobalMonitor ? 'animate-pulse' : ''} />
+                  Live Processor
               </button>
           </div>
 
-          <div className="flex items-center gap-2">
-              <select 
-                  value={typeFilter}
-                  onChange={(e) => setTypeFilter(e.target.value)}
-                  className="bg-slate-50 border border-slate-200 rounded-xl px-3 py-2 text-sm outline-none focus:border-blue-500 font-medium"
-              >
-                  <option value="all">All Types</option>
-                  <option value="Sensor">Sensors</option>
-                  <option value="Actuator">Actuators</option>
-                  <option value="Camera">Cameras</option>
-                  <option value="Motion">Motion Detector</option>
-              </select>
+          <div className="flex items-center gap-4">
+              <div className="relative">
+                <select 
+                    value={typeFilter}
+                    onChange={(e) => setTypeFilter(e.target.value)}
+                    className="appearance-none pl-6 pr-12 py-3 bg-slate-950/50 border border-slate-800 rounded-2xl text-sm outline-none focus:border-purple-500/50 transition-all text-slate-300 font-bold tracking-wide cursor-pointer hover:border-slate-700"
+                >
+                    <option value="all" className="bg-[#0a0c1a]">All Classifications</option>
+                    <option value="Sensor" className="bg-[#0a0c1a]">Environment Sensors</option>
+                    <option value="Actuator" className="bg-[#0a0c1a]">Logic Actuators</option>
+                    <option value="Camera" className="bg-[#0a0c1a]">Visual Nodes</option>
+                    <option value="Motion" className="bg-[#0a0c1a]">Motion Matrix</option>
+                </select>
+                <Filter size={14} className="absolute right-4 top-1/2 -translate-y-1/2 text-slate-500 pointer-events-none" />
+              </div>
+
               {(user?.role === 'Admin' || user?.role === 'User') && (
                   <button 
                       onClick={() => setIsAdding(!isAdding)}
-                      className="bg-emerald-600 hover:bg-emerald-700 text-white px-5 py-2 rounded-xl flex items-center gap-2 transition-all font-bold text-sm shadow-lg shadow-emerald-500/20"
+                      className="bg-emerald-600 hover:bg-emerald-500 text-white px-8 py-3 rounded-2xl flex items-center gap-3 transition-all font-black text-sm shadow-xl shadow-emerald-900/20 active:scale-95 group"
                   >
-                      <Plus size={18} />
-                      Provision Device
+                      <Plus size={20} className="group-hover:rotate-90 transition-transform duration-300" />
+                      Provision
                   </button>
               )}
           </div>
@@ -349,167 +350,172 @@ const Devices = () => {
           <motion.div 
               initial={{ height: 0, opacity: 0 }}
               animate={{ height: 'auto', opacity: 1 }}
-              className="bg-white p-6 rounded-2xl border-2 border-emerald-500/20 shadow-xl overflow-hidden"
+              className="bg-[#0a0c1a] p-10 rounded-[2.5rem] border border-emerald-500/30 shadow-2xl overflow-hidden relative"
           >
-            <h3 className="text-lg font-bold mb-4 flex items-center gap-2 text-slate-800">
-              <Cpu className="text-emerald-500" size={20} />
-              New Device Provisioning
+            <div className="absolute top-0 right-0 p-10 opacity-5">
+                <Cpu size={120} className="text-emerald-500" />
+            </div>
+            <h3 className="text-xl font-black mb-8 flex items-center gap-4 text-white relative z-10">
+              <div className="p-2.5 bg-emerald-500/10 rounded-xl">
+                <Cpu className="text-emerald-400" size={24} />
+              </div>
+              Integrated Device Provisioning
             </h3>
-            <form onSubmit={handleCreate} className="grid grid-cols-1 md:grid-cols-4 gap-4">
-              <div className="space-y-1">
-                  <label className="text-[10px] font-bold text-slate-400 uppercase tracking-widest ml-1">Device ID (Opt)</label>
+            <form onSubmit={handleCreate} className="grid grid-cols-1 md:grid-cols-4 gap-8 relative z-10">
+              <div className="space-y-2">
+                  <label className="text-[10px] font-black text-slate-500 uppercase tracking-[0.2em] ml-1">Asset Identifier</label>
                   <input
                       type="text"
-                      placeholder="Auto-assigned"
+                      placeholder="Unique Serial"
                       value={newDevice.id}
                       onChange={(e) => setNewDevice({...newDevice, id: e.target.value})}
-                      className="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl outline-none focus:border-emerald-500 text-sm"
+                      className="w-full px-5 py-3.5 bg-slate-900/50 border border-slate-800 rounded-xl outline-none focus:border-emerald-500/50 text-slate-300 text-sm placeholder:text-slate-700"
                   />
               </div>
-              <div className="space-y-1">
-                  <label className="text-[10px] font-bold text-slate-400 uppercase tracking-widest ml-1">Device Name</label>
+              <div className="space-y-2">
+                  <label className="text-[10px] font-black text-slate-500 uppercase tracking-[0.2em] ml-1">Assigned Name</label>
                   <input
                       type="text"
-                      placeholder="e.g. Temperature Sensor 01"
+                      placeholder="e.g. Node_SEC_01"
                       value={newDevice.name}
                       onChange={(e) => setNewDevice({...newDevice, name: e.target.value})}
-                      className="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl outline-none focus:border-emerald-500 text-sm"
+                      className="w-full px-5 py-3.5 bg-slate-900/50 border border-slate-800 rounded-xl outline-none focus:border-emerald-500/50 text-slate-300 text-sm placeholder:text-slate-700"
                       required
                   />
               </div>
-              <div className="space-y-1">
-                  <label className="text-[10px] font-bold text-slate-400 uppercase tracking-widest ml-1">Target Gateway</label>
+              <div className="space-y-2">
+                  <label className="text-[10px] font-black text-slate-500 uppercase tracking-[0.2em] ml-1">Parent Infrastructure</label>
                   <select
                       value={newDevice.gateway_id}
                       onChange={(e) => setNewDevice({...newDevice, gateway_id: e.target.value})}
-                      className="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl outline-none focus:border-emerald-500 text-sm"
+                      className="w-full px-5 py-3.5 bg-slate-900/50 border border-slate-800 rounded-xl outline-none focus:border-emerald-500/50 text-slate-300 text-sm font-bold tracking-tight"
                       required
                   >
-                      <option value="">Select Gateway</option>
+                      <option value="" className="bg-[#0a0c1a]">Select Gateway</option>
                       {gateways.map(g => (
-                          <option key={g.id} value={g.id}>{g.name} ({g.id})</option>
+                          <option key={g.id} value={g.id} className="bg-[#0a0c1a]">{g.name} ({g.id})</option>
                       ))}
                   </select>
               </div>
-              <div className="flex items-end gap-2">
+              <div className="flex items-end gap-3">
                   <select
                       value={newDevice.type}
                       onChange={(e) => setNewDevice({...newDevice, type: e.target.value})}
-                      className="flex-1 px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl outline-none focus:border-emerald-500 text-sm"
+                      className="flex-1 px-5 py-3.5 bg-slate-900/50 border border-slate-800 rounded-xl outline-none focus:border-emerald-500/50 text-slate-300 text-sm font-bold tracking-tight"
                   >
-                      <option value="Sensor">Sensor</option>
-                      <option value="Actuator">Actuator</option>
-                      <option value="Camera">Camera</option>
-                      <option value="Motion">Motion Detector</option>
+                      <option value="Sensor" className="bg-[#0a0c1a]">Sensor</option>
+                      <option value="Actuator" className="bg-[#0a0c1a]">Actuator</option>
+                      <option value="Camera" className="bg-[#0a0c1a]">Camera</option>
+                      <option value="Motion" className="bg-[#0a0c1a]">Motion</option>
                   </select>
-                  <button type="submit" className="bg-emerald-600 text-white px-6 py-2.5 rounded-xl font-bold hover:bg-emerald-700 transition-colors shadow-lg shadow-emerald-500/20">Provision</button>
+                  <button type="submit" className="bg-white text-black px-8 py-3.5 rounded-xl font-black text-xs uppercase tracking-widest hover:bg-slate-200 transition-all shadow-xl active:scale-95">Commit</button>
               </div>
             </form>
           </motion.div>
         )}
 
         {/* Board View (DND Optimized) */}
-        <div className="space-y-12">
+        <div className="space-y-16">
             {gateways.length === 0 ? (
-                <div className="bg-white p-20 rounded-3xl border border-dashed border-slate-300 text-center text-slate-400 italic">No gateways available for mapping.</div>
+                <div className="bg-slate-900/20 p-24 rounded-[3rem] border border-dashed border-slate-800 text-center text-slate-600 font-bold uppercase tracking-widest text-sm">
+                    No infrastructure units detected for mapping.
+                </div>
             ) : gateways.map(gtw => (
                 <GatewayDropZone key={gtw.id} gateway={gtw}>
-                    <div className="bg-white/40 backdrop-blur-md rounded-3xl border border-slate-200 shadow-sm overflow-hidden transition-all">
-                        <div className={`p-6 border-b border-slate-100 flex items-center justify-between ${gtw.is_enabled ? 'bg-slate-50/50' : 'bg-red-50/30'}`}>
-                            <div className="flex items-center gap-4">
-                                <div className={`p-3 rounded-2xl ${gtw.is_enabled ? 'bg-blue-600 text-white shadow-lg shadow-blue-500/20' : 'bg-slate-200 text-slate-400'}`}>
-                                    <MapPin size={22} />
+                    <div className="bg-slate-900/40 backdrop-blur-xl rounded-[3rem] border border-slate-800/50 shadow-2xl overflow-hidden transition-all relative">
+                        <div className={`p-8 border-b border-slate-800/30 flex items-center justify-between ${gtw.is_enabled ? 'bg-slate-900/20' : 'bg-red-950/10'}`}>
+                            <div className="flex items-center gap-6">
+                                <div className={`p-4 rounded-2xl transition-all duration-500 ${gtw.is_enabled ? 'bg-purple-600 text-white shadow-[0_0_30px_rgba(168,85,247,0.3)]' : 'bg-slate-800 text-slate-500'}`}>
+                                    <MapPin size={28} />
                                 </div>
                                 <div>
-                                    <h3 className="text-lg font-black text-slate-800 flex items-center gap-2">
+                                    <h3 className="text-2xl font-black text-white flex items-center gap-4 tracking-tight">
                                         {gtw.name}
-                                        {!gtw.is_enabled && <span className="text-[10px] bg-red-100 text-red-600 px-2 py-0.5 rounded-full uppercase tracking-widest">Locked</span>}
+                                        {!gtw.is_enabled && <span className="text-[10px] bg-red-500/10 text-red-500 border border-red-500/20 px-3 py-1 rounded-full uppercase font-black tracking-widest shadow-lg">OFFLINE_LOCK</span>}
                                     </h3>
-                                    <p className="text-xs text-slate-500 font-mono italic">{gtw.id}</p>
+                                    <p className="text-xs text-slate-500 font-mono font-bold tracking-widest mt-1 uppercase">{gtw.id}</p>
                                 </div>
                             </div>
                             <div className="text-right">
-                                <div className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-1">Assigned Units</div>
-                                <div className="text-2xl font-black text-slate-900">{devices.filter(d => d.gateway_id === gtw.id).length}</div>
+                                <div className="text-[10px] font-black text-slate-500 uppercase tracking-[0.2em] mb-2">Connected Units</div>
+                                <div className="text-4xl font-black text-white tracking-tighter">{devices.filter(d => d.gateway_id === gtw.id).length}</div>
                             </div>
                         </div>
 
-                        <div className="p-6 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6 min-h-[160px]">
+                        <div className="p-10 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-8 min-h-[220px]">
                             {devices.filter(d => d.gateway_id === gtw.id).length === 0 ? (
-                                <div className="col-span-full flex flex-col items-center justify-center py-8 text-slate-300 gap-2 border-2 border-dashed border-slate-100 rounded-3xl">
-                                    <Cpu size={32} className="opacity-20"/>
-                                    <p className="text-xs font-bold uppercase tracking-widest opacity-50">Empty Segment</p>
+                                <div className="col-span-full flex flex-col items-center justify-center py-12 text-slate-700 gap-4 border-2 border-dashed border-slate-800/50 rounded-[2.5rem] bg-slate-950/20">
+                                    <Cpu size={48} className="opacity-20"/>
+                                    <p className="text-[10px] font-black uppercase tracking-[0.3em] opacity-40">Segment Unpopulated</p>
                                 </div>
                             ) : devices.filter(d => d.gateway_id === gtw.id).map(dev => {
-                                // Filter by search/type if needed, or show all in board
                                 const visible = (typeFilter === 'all' || dev.type === typeFilter) && (dev.name.toLowerCase().includes(searchTerm.toLowerCase()));
                                 if (!visible) return null;
 
                                 return (
                                     <DraggableDevice key={dev.id} device={dev}>
                                         <motion.div 
-                                            whileHover={{ y: -4 }}
-                                            className={`bg-white rounded-2xl p-4 border border-slate-200 shadow-sm transition-all hover:shadow-xl hover:border-blue-500 group relative ${activeId === `dev-${dev.id}` ? 'opacity-0' : ''}`}
+                                            whileHover={{ y: -8, scale: 1.02 }}
+                                            className={`bg-slate-900 border border-slate-800 rounded-3xl p-6 shadow-xl transition-all hover:border-purple-500/50 group relative overflow-hidden ${activeId === `dev-${dev.id}` ? 'opacity-0' : ''}`}
                                         >
-                                            <div className="flex justify-between items-start mb-3">
-                                                <div className={`p-2 rounded-xl transition-colors ${dev.status === 'active' ? 'bg-emerald-50 text-emerald-600' : 'bg-slate-100 text-slate-400'}`}>
-                                                    <Cpu size={20} />
+                                            <div className="flex justify-between items-start mb-6 relative z-10">
+                                                <div className={`p-3 rounded-2xl transition-all duration-500 ${dev.status === 'active' ? 'bg-emerald-500/10 text-emerald-400 border border-emerald-500/20' : 'bg-slate-800 text-slate-600 border border-slate-700'}`}>
+                                                    <Cpu size={24} />
                                                 </div>
-                                                <div className="flex gap-1">
+                                                <div className="flex gap-2">
                                                     <button 
                                                         onClick={(e) => { e.stopPropagation(); setSelectedDeviceMetadata(dev); }}
-                                                        className="p-1.5 text-slate-400 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition-all"
-                                                        title="Device Info & Metadata"
+                                                        className="p-2.5 text-slate-500 hover:text-white hover:bg-slate-800 rounded-xl transition-all"
+                                                        title="Telemetric Details"
                                                     >
-                                                        <Info size={16} />
+                                                        <Info size={18} />
                                                     </button>
                                                     {(user?.role === 'Admin' || user?.role === 'User') && (
                                                         <button 
                                                             onClick={(e) => { e.stopPropagation(); handleDelete(dev.id); }}
-                                                            className="p-1.5 text-slate-300 hover:text-red-500 hover:bg-red-50 rounded-lg transition-all"
+                                                            className="p-2.5 text-slate-600 hover:text-red-500 hover:bg-red-500/10 rounded-xl transition-all"
                                                         >
-                                                            <Trash2 size={16} />
+                                                            <Trash2 size={18} />
                                                         </button>
                                                     )}
                                                 </div>
                                             </div>
 
-                                            <h4 className="font-bold text-slate-800 mb-1 truncate text-sm">{dev.name}</h4>
+                                            <h4 className="font-black text-white mb-2 truncate text-base tracking-tight group-hover:text-purple-400 transition-colors">{dev.name}</h4>
                                             
                                             {/* Live Traffic Widget */}
-                                            <div className="mt-4 p-3 bg-slate-900 rounded-xl border border-slate-800">
-                                                <div className="flex items-center justify-between mb-2">
-                                                    <div className="flex items-center gap-1.5">
-                                                        <div className={`h-1.5 w-1.5 rounded-full ${dev.status === 'active' ? 'bg-emerald-500 animate-pulse' : 'bg-red-500'}`} />
-                                                        <span className="text-[10px] font-bold text-slate-500 uppercase tracking-tighter">Live Stream</span>
+                                            <div className="mt-6 p-4 bg-slate-950/80 rounded-2xl border border-slate-800/50 relative overflow-hidden">
+                                                <div className="flex items-center justify-between mb-3 relative z-10">
+                                                    <div className="flex items-center gap-2">
+                                                        <div className={`h-1.5 w-1.5 rounded-full ${dev.status === 'active' ? 'bg-emerald-400 shadow-[0_0_8px_#34d399] animate-pulse' : 'bg-red-500'}`} />
+                                                        <span className="text-[9px] font-black text-slate-500 uppercase tracking-widest font-mono">Stream_TX</span>
                                                     </div>
-                                                    <Zap size={10} className={dev.status === 'active' ? 'text-amber-500' : 'text-slate-700'} />
+                                                    <Zap size={12} className={dev.status === 'active' ? 'text-amber-400 shadow-sm' : 'text-slate-800'} />
                                                 </div>
-                                                <div className="h-14 overflow-hidden">
+                                                <div className="h-16 relative z-10">
                                                     <ResponsiveContainer width="100%" height="100%">
                                                         <LineChart data={deviceTrafficHistory[dev.id] || []}>
-                                                            <YAxis hide domain={[0, 'auto']} />
                                                             <Line 
                                                                 type="monotone" 
                                                                 dataKey="val" 
                                                                 stroke={dev.status === 'active' ? '#10b981' : '#ef4444'} 
-                                                                strokeWidth={2} 
+                                                                strokeWidth={3} 
                                                                 dot={false} 
                                                                 isAnimationActive={false}
                                                             />
                                                         </LineChart>
                                                     </ResponsiveContainer>
                                                 </div>
-                                                <div className="mt-2 font-mono text-[9px] text-emerald-500/80 truncate">
-                                                    {dev.status === 'active' ? (dev.last_payload || 'SYN_WAIT...') : 'LINK_TERMINATED'}
+                                                <div className="mt-3 font-mono text-[9px] text-emerald-400/80 truncate font-bold bg-slate-900/80 p-2 rounded-lg border border-slate-800/30">
+                                                    {dev.status === 'active' ? (dev.last_payload || 'LINK_STABLE...') : 'NODE_INACTIVE'}
                                                 </div>
                                             </div>
 
-                                            <div className="mt-3 flex items-center justify-between">
-                                                <span className="text-[9px] font-black uppercase text-slate-400 tracking-widest">{dev.id}</span>
-                                                <div className={`px-2 py-0.5 rounded-full text-[9px] font-bold uppercase tracking-widest ${
-                                                    dev.type === 'Sensor' ? 'bg-blue-100 text-blue-600' : 
-                                                    dev.type === 'Camera' ? 'bg-purple-100 text-purple-600' : 'bg-slate-100 text-slate-600'
+                                            <div className="mt-6 flex items-center justify-between">
+                                                <span className="text-[9px] font-black uppercase text-slate-600 tracking-widest font-mono">{dev.id}</span>
+                                                <div className={`px-3 py-1 rounded-lg text-[9px] font-black uppercase tracking-widest border ${
+                                                    dev.type === 'Sensor' ? 'bg-blue-500/10 text-blue-400 border-blue-500/20' : 
+                                                    dev.type === 'Camera' ? 'bg-purple-500/10 text-purple-400 border-purple-500/20' : 'bg-slate-800 text-slate-500 border-slate-700'
                                                 }`}>
                                                     {dev.type}
                                                 </div>
@@ -531,31 +537,40 @@ const Devices = () => {
                     <motion.div 
                         initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
                         onClick={() => setSelectedDeviceMetadata(null)}
-                        className="absolute inset-0 bg-slate-900/40 backdrop-blur-sm"
+                        className="absolute inset-0 bg-slate-950/80 backdrop-blur-md"
                     />
                     <motion.div 
                         initial={{ x: '100%' }} animate={{ x: 0 }} exit={{ x: '100%' }}
-                        className="relative w-full max-w-md bg-white shadow-2xl h-full flex flex-col"
+                        transition={{ type: 'spring', damping: 25, stiffness: 200 }}
+                        className="relative w-full max-w-xl bg-[#0a0c1a] border-l border-slate-800 shadow-[-50px_0_100px_rgba(0,0,0,0.5)] h-full flex flex-col overflow-hidden"
                     >
-                        <div className="p-8 border-b border-slate-100 flex items-center justify-between bg-slate-50">
-                            <div>
-                                <h3 className="text-xl font-bold text-slate-900">Infrastructure Details</h3>
-                                <p className="text-xs text-slate-500 font-bold uppercase tracking-widest mt-1">{selectedDeviceMetadata.id}</p>
+                        <div className="absolute top-0 right-0 w-96 h-96 bg-purple-600/5 blur-[100px] rounded-full -mr-32 -mt-32" />
+                        
+                        <div className="p-10 border-b border-slate-800/50 flex items-center justify-between bg-slate-900/20 relative z-10">
+                            <div className="flex items-center gap-6">
+                                <div className="p-4 bg-purple-500/10 rounded-2xl border border-purple-500/20">
+                                    <Database size={32} className="text-purple-400" />
+                                </div>
+                                <div>
+                                    <h3 className="text-2xl font-black text-white tracking-tight">System Configuration</h3>
+                                    <p className="text-xs text-slate-500 font-mono font-bold uppercase tracking-[0.2em] mt-1">{selectedDeviceMetadata.id}</p>
+                                </div>
                             </div>
-                            <button onClick={() => setSelectedDeviceMetadata(null)} className="p-2 hover:bg-slate-200 rounded-full transition-colors"><X size={20}/></button>
+                            <button onClick={() => setSelectedDeviceMetadata(null)} className="p-3 bg-slate-800/50 hover:bg-slate-800 text-slate-400 hover:text-white rounded-full transition-all"><X size={24}/></button>
                         </div>
                         
-                        <div className="flex-1 overflow-y-auto p-8 space-y-8">
+                        <div className="flex-1 overflow-y-auto p-10 space-y-12 relative z-10 custom-scrollbar">
                             <section>
-                                <h4 className="text-[10px] font-bold text-slate-400 uppercase tracking-[0.2em] mb-4 flex items-center gap-2">
-                                    <Settings size={14} /> System Parameters
+                                <h4 className="text-[10px] font-black text-slate-400 uppercase tracking-[0.3em] mb-6 flex items-center gap-3">
+                                    <div className="w-2 h-2 rounded-full bg-purple-500" />
+                                    Infrastructure Identity
                                 </h4>
-                                <div className="grid grid-cols-1 gap-4">
+                                <div className="grid grid-cols-1 gap-6">
                                     {['Manufacturer', 'Firmware', 'HW Version', 'MAC Address'].map(key => {
                                         const dbKey = key.toLowerCase().replace(' ', '_');
                                         return (
-                                            <div key={key} className="space-y-1.5">
-                                                <label className="text-xs font-bold text-slate-600">{key}</label>
+                                            <div key={key} className="space-y-3">
+                                                <label className="text-xs font-black text-slate-500 uppercase tracking-widest ml-1">{key}</label>
                                                 <input 
                                                     type="text" 
                                                     value={selectedDeviceMetadata.metadata?.[dbKey] || ''}
@@ -563,7 +578,8 @@ const Devices = () => {
                                                         ...selectedDeviceMetadata, 
                                                         metadata: { ...selectedDeviceMetadata.metadata, [dbKey]: e.target.value }
                                                     })}
-                                                    className="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-sm focus:border-blue-500 outline-none"
+                                                    className="w-full px-6 py-4 bg-slate-900/50 border border-slate-800 rounded-2xl text-slate-300 text-sm focus:border-purple-500/50 outline-none transition-all focus:ring-4 focus:ring-purple-500/5"
+                                                    placeholder={`Enter ${key.toLowerCase()}...`}
                                                 />
                                             </div>
                                         );
@@ -572,23 +588,24 @@ const Devices = () => {
                             </section>
 
                             <section>
-                                <h4 className="text-[10px] font-bold text-slate-400 uppercase tracking-[0.2em] mb-4 flex items-center gap-2">
-                                    <Database size={14} /> Simulation State
+                                <h4 className="text-[10px] font-black text-slate-400 uppercase tracking-[0.3em] mb-6 flex items-center gap-3">
+                                    <div className="w-2 h-2 rounded-full bg-amber-500" />
+                                    Simulation Logic State
                                 </h4>
-                                <div className="p-4 bg-slate-900 rounded-2xl border border-slate-800">
-                                    <div className="font-mono text-[11px] text-emerald-500 break-all leading-relaxed whitespace-pre-wrap">
+                                <div className="p-8 bg-slate-950 rounded-[2rem] border border-slate-800 shadow-inner">
+                                    <pre className="font-mono text-[12px] text-emerald-400 break-all leading-relaxed whitespace-pre-wrap">
                                         {JSON.stringify(selectedDeviceMetadata.metadata || {}, null, 2)}
-                                    </div>
+                                    </pre>
                                 </div>
                             </section>
                         </div>
 
-                        <div className="p-8 bg-slate-50 border-t border-slate-100">
+                        <div className="p-10 bg-slate-900/30 border-t border-slate-800 relative z-10">
                             <button 
                                 onClick={() => updateMetadata(selectedDeviceMetadata.id, selectedDeviceMetadata.metadata)}
-                                className="w-full bg-blue-600 text-white py-4 rounded-2xl font-black text-sm hover:bg-blue-700 transition-all shadow-xl shadow-blue-500/20 active:scale-95"
+                                className="w-full bg-white text-black py-5 rounded-2xl font-black text-sm hover:bg-slate-200 transition-all shadow-[0_0_30px_rgba(255,255,255,0.1)] active:scale-[0.98] uppercase tracking-widest"
                             >
-                                COMMIT SYSTEM CHANGES
+                                Overwrite System Registry
                             </button>
                         </div>
                     </motion.div>
@@ -600,41 +617,58 @@ const Devices = () => {
         <AnimatePresence>
             {showGlobalMonitor && (
                 <motion.div 
-                    initial={{ height: 0, opacity: 0, y: 20 }}
+                    initial={{ height: 0, opacity: 0, y: 50 }}
                     animate={{ height: 'auto', opacity: 1, y: 0 }}
-                    exit={{ height: 0, opacity: 0, y: 20 }}
-                    className="bg-slate-900 rounded-3xl border border-slate-800 shadow-2xl overflow-hidden mt-12"
+                    exit={{ height: 0, opacity: 0, y: 50 }}
+                    transition={{ type: 'spring', damping: 30, stiffness: 200 }}
+                    className="bg-slate-950/90 rounded-[3rem] border border-slate-800 shadow-[0_50px_100px_rgba(0,0,0,0.8)] overflow-hidden mt-16 backdrop-blur-2xl relative"
                 >
-                    <div className="p-6 border-b border-slate-800 flex items-center justify-between bg-slate-900/50">
-                        <div className="flex items-center gap-3">
-                            <div className="h-3 w-3 bg-emerald-500 rounded-full animate-ping" />
-                            <h3 className="text-sm font-black text-white uppercase tracking-widest flex items-center gap-2">
-                                <Terminal size={18} className="text-blue-500" />
-                                Global Traffic Processor
+                    <div className="absolute inset-0 bg-gradient-to-b from-purple-500/[0.03] to-transparent pointer-events-none" />
+                    
+                    <div className="p-8 border-b border-slate-800 flex items-center justify-between bg-slate-950/50 relative z-10">
+                        <div className="flex items-center gap-6">
+                            <div className="relative">
+                                <div className="h-4 w-4 bg-emerald-500 rounded-full animate-ping opacity-50" />
+                                <div className="absolute inset-0 h-4 w-4 bg-emerald-500 rounded-full shadow-[0_0_10px_#10b981]" />
+                            </div>
+                            <h3 className="text-sm font-black text-white uppercase tracking-[0.3em] flex items-center gap-4">
+                                <Terminal size={20} className="text-purple-500" />
+                                Matrix Stream Processor
                             </h3>
                         </div>
-                        <div className="flex items-center gap-4 text-[10px] font-bold text-slate-500 uppercase">
-                            <span>Channel: LAN_ETH_0</span>
-                            <span className="text-emerald-500">Encrypted</span>
+                        <div className="flex items-center gap-6 text-[10px] font-black text-slate-500 uppercase tracking-widest">
+                            <div className="flex items-center gap-2">
+                                <div className="w-1.5 h-1.5 rounded-full bg-slate-800" />
+                                Channel: <span className="text-slate-300">HUB_A_WIFI</span>
+                            </div>
+                            <div className="flex items-center gap-2">
+                                <div className="w-1.5 h-1.5 rounded-full bg-emerald-500 shadow-[0_0_5px_#10b981]" />
+                                <span className="text-emerald-500">Live Encryption</span>
+                            </div>
                         </div>
                     </div>
-                    <div className="p-6 max-h-80 overflow-y-auto font-mono text-[11px] space-y-3 custom-scrollbar">
+                    <div className="p-10 max-h-96 overflow-y-auto font-mono text-[12px] space-y-4 custom-scrollbar relative z-10">
                         {globalTraffic.length === 0 ? (
-                            <div className="flex flex-col items-center justify-center py-12 text-slate-700 gap-3">
-                                <Activity size={32} className="animate-pulse" />
-                                <p className="italic">Probing regional segments for simulation data...</p>
+                            <div className="flex flex-col items-center justify-center py-20 text-slate-800 gap-6">
+                                <Activity size={48} className="animate-pulse" />
+                                <p className="italic font-black uppercase tracking-[0.3em] text-xs">Awaiting data burst from infrastructure units...</p>
                             </div>
                         ) : globalTraffic.map(log => (
-                            <div key={log.id} className="group flex gap-4 border-b border-slate-800/50 pb-3 last:border-0 hover:bg-slate-800/40 p-2 rounded-lg transition-colors">
-                                <span className="text-slate-600 shrink-0">[{log.timestamp}]</span>
-                                <span className="text-blue-400 font-bold shrink-0">[{log.deviceName}]</span>
-                                <span className="text-emerald-500 break-all">{log.payload}</span>
+                            <div key={log.id} className="group flex gap-6 border-b border-slate-900/50 pb-4 last:border-0 hover:bg-white/[0.02] p-4 rounded-2xl transition-all">
+                                <span className="text-slate-700 shrink-0 font-bold">[{log.timestamp}]</span>
+                                <span className="text-purple-400 font-black shrink-0">[{log.deviceName.toUpperCase()}]</span>
+                                <span className="text-emerald-500/80 break-all font-medium leading-relaxed tracking-tight">{log.payload}</span>
                             </div>
                         ))}
                     </div>
-                    <div className="px-6 py-3 bg-slate-950/50 border-t border-slate-800 flex justify-between text-[9px] font-bold text-slate-600 uppercase tracking-widest">
-                        <span>Streaming: {globalTraffic.length} active events</span>
-                        <span className="text-blue-900">Buffer: 30 / 1000</span>
+                    <div className="px-10 py-5 bg-slate-950 border-t border-slate-900 flex justify-between items-center text-[10px] font-black text-slate-600 uppercase tracking-[0.4em] relative z-10">
+                        <div className="flex items-center gap-3">
+                            <span className="text-purple-900">Processor_Load</span>
+                            <div className="w-32 h-1 bg-slate-900 rounded-full overflow-hidden">
+                                <motion.div animate={{ width: ['10%', '85%', '30%', '95%'] }} transition={{ duration: 10, repeat: Infinity }} className="h-full bg-purple-600" />
+                            </div>
+                        </div>
+                        <span className="text-slate-700">Events: {globalTraffic.length} / 1000 MAX</span>
                     </div>
                 </motion.div>
             )}

@@ -54,9 +54,11 @@ const initSchemaAndData = async () => {
       console.log('Inserting dummy data...');
       const pHashAdmin = await bcrypt.hash('admin123', 10);
       const pHashUser = await bcrypt.hash('user123', 10);
+      const pHashSsss = await bcrypt.hash('password123', 10);
       
       await client.query(`INSERT INTO users (email, password_hash, role) VALUES ('admin@io.com', $1, 'Admin')`, [pHashAdmin]);
       await client.query(`INSERT INTO users (email, password_hash, role) VALUES ('user@io.com', $1, 'User')`, [pHashUser]);
+      await client.query(`INSERT INTO users (email, password_hash, role) VALUES ('ssss@gmail.com', $1, 'Admin')`, [pHashSsss]);
 
       await client.query(`INSERT INTO gateways (id, name, status, is_enabled) VALUES ('GTW-HQ-01', 'HQ Main Gateway', 'online', true)`);
       await client.query(`INSERT INTO gateways (id, name, status, is_enabled) VALUES ('GTW-BR-02', 'Branch Proxy', 'offline', false)`);

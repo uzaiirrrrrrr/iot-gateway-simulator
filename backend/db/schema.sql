@@ -13,6 +13,8 @@ CREATE TABLE IF NOT EXISTS gateways (
   name VARCHAR(255) NOT NULL,
   status VARCHAR(50) DEFAULT 'offline',
   last_heartbeat TIMESTAMP,
+  heartbeat_interval INT DEFAULT 10,
+  traffic_rate INT DEFAULT 5000,
   is_enabled BOOLEAN DEFAULT true,
   created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
@@ -22,7 +24,9 @@ CREATE TABLE IF NOT EXISTS devices (
   gateway_id VARCHAR(50) REFERENCES gateways(id) ON DELETE CASCADE,
   name VARCHAR(255) NOT NULL,
   type VARCHAR(100),
-  status VARCHAR(50) DEFAULT 'inactive',
+  status VARCHAR(50) DEFAULT 'active',
+  last_payload TEXT,
+  metadata JSONB DEFAULT '{}',
   created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
 
@@ -34,6 +38,7 @@ CREATE TABLE IF NOT EXISTS traffic_logs (
   is_secure BOOLEAN, -- true for TLS, false for HTTP
   latency INT, -- in ms
   status VARCHAR(50), -- success, failed
+  payload TEXT,
   timestamp TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
 
@@ -84,4 +89,11 @@ CREATE TABLE IF NOT EXISTS heartbeat_logs (
   id SERIAL PRIMARY KEY,
   gateway_id VARCHAR(50) REFERENCES gateways(id) ON DELETE CASCADE,
   timestamp TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+CREATE TABLE IF NOT EXISTS refresh_tokens (
+  id SERIAL PRIMARY KEY,
+  user_id INT REFERENCES users(id) ON DELETE CASCADE,
+  token TEXT NOT NULL,
+  expires_at TIMESTAMP NOT NULL,
+  created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
