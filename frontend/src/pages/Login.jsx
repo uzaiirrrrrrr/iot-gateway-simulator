@@ -17,7 +17,7 @@ const Login = () => {
     setError('');
     try {
       await login(email, password, rememberMe);
-      navigate('/dashboard');
+      navigate('/gateways');
     } catch (err) {
       setError(err.response?.data?.message || 'Login failed. Please check credentials.');
     }

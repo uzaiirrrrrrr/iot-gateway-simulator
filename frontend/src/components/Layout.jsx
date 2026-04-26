@@ -26,20 +26,11 @@ const Layout = () => {
   };
 
   const navItems = [
-    { name: 'Dashboard', path: '/dashboard', icon: <LayoutDashboard size={20} />, roles: ['Admin', 'User', 'Viewer'] },
     { name: 'Gateways', path: '/gateways', icon: <Server size={20} />, roles: ['Admin', 'User', 'Viewer'] },
     { name: 'Device Provision', path: '/devices', icon: <Cpu size={20} />, roles: ['Admin', 'User'] },
-    { name: 'Attack Sandbox', path: '/simulation', icon: <Terminal size={20} />, roles: ['Admin'] },
-    { name: 'Training Lab', path: '/training', icon: <Trophy size={20} />, roles: ['Admin', 'User'] },
-    { name: 'Network Traffic', path: '/network', icon: <Shield size={20} />, roles: ['Admin', 'User', 'Viewer'] },
-    { name: 'Cloud Pipeline', path: '/cloud', icon: <Cloud size={20} />, roles: ['Admin', 'User'] },
-    { name: 'System Health', path: '/health', icon: <Activity size={20} />, roles: ['Admin', 'User', 'Viewer'] },
-    { name: 'Security Audit', path: '/audit', icon: <UserCheck size={20} />, roles: ['Admin'] },
-    { name: 'System Logs', path: '/logs', icon: <History size={20} />, roles: ['Admin', 'User', 'Viewer'] },
-    { name: 'Compliance Reports', path: '/reports', icon: <FileText size={20} />, roles: ['Admin', 'User'] },
   ];
 
-  const filteredNavItems = navItems.slice(0, 3).filter(item => 
+  const filteredNavItems = navItems.filter(item => 
     !item.roles || item.roles.includes(user?.role)
   );
 
