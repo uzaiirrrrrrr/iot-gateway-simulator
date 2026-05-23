@@ -13,4 +13,10 @@ router.post('/attack', requireRole(['Admin']), analyticsController.triggerAttack
 router.post('/scenario', requireRole(['Admin', 'User']), analyticsController.runScenario);
 router.post('/clear', requireRole(['Admin']), analyticsController.clearLogs);
 
+// Cloud Pipelines Endpoint
+router.get('/pipelines', analyticsController.getPipelines);
+router.post('/pipelines', requireRole(['Admin', 'User']), analyticsController.createPipeline);
+router.delete('/pipelines/:id', requireRole(['Admin']), analyticsController.deletePipeline);
+router.patch('/pipelines/:id/status', requireRole(['Admin', 'User']), analyticsController.updatePipelineStatus);
+
 module.exports = router;

@@ -28,6 +28,9 @@ const Layout = () => {
   const navItems = [
     { name: 'Gateways', path: '/gateways', icon: <Server size={20} />, roles: ['Admin', 'User', 'Viewer'] },
     { name: 'Device Provision', path: '/devices', icon: <Cpu size={20} />, roles: ['Admin', 'User'] },
+    { name: 'Security View', path: '/security', icon: <Shield size={20} />, roles: ['Admin', 'User', 'Viewer'] },
+    { name: 'Traffic Analytics', path: '/analytics', icon: <Activity size={20} />, roles: ['Admin', 'User', 'Viewer'] },
+    { name: 'Cloud Pipelines', path: '/cloud', icon: <Cloud size={20} />, roles: ['Admin', 'User', 'Viewer'] },
   ];
 
   const filteredNavItems = navItems.filter(item => 

@@ -16,6 +16,7 @@ CREATE TABLE IF NOT EXISTS gateways (
   heartbeat_interval INT DEFAULT 10,
   traffic_rate INT DEFAULT 5000,
   is_enabled BOOLEAN DEFAULT true,
+  is_secure BOOLEAN DEFAULT true,
   created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
 
@@ -97,3 +98,13 @@ CREATE TABLE IF NOT EXISTS refresh_tokens (
   expires_at TIMESTAMP NOT NULL,
   created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
+
+CREATE TABLE IF NOT EXISTS cloud_pipelines (
+  id VARCHAR(50) PRIMARY KEY,
+  name VARCHAR(255) NOT NULL,
+  provider VARCHAR(50) NOT NULL, -- 'AWS', 'Azure', 'Custom'
+  status VARCHAR(50) DEFAULT 'connected', -- 'connected', 'disconnected', 'reconnecting'
+  gateway_id VARCHAR(50) REFERENCES gateways(id) ON DELETE SET NULL,
+  created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+

@@ -123,3 +123,36 @@ exports.getGatewayLogs = async (req, res) => {
         res.status(500).json({ message: 'Server error' });
     }
 };
+
+exports.toggleSecureMode = async (req, res) => {
+  const { id } = req.params;
+  const { is_secure } = req.body;
+
+  try {
+    const result = await db.query(
+      'UPDATE gateways SET is_secure = $1 WHERE id = $2 RETURNING *',
+      [is_secure, id]
+    );
+
+    if (result.rows.length === 0) {
+      return res.status(404).json({ message: 'Gateway not found.' });
+    }
+
+    const gateway = result.rows[0];
+    const modeName = is_secure ? 'SECURE_TLS' : 'INSECURE_HTTP';
+
+    await db.query(`INSERT INTO audit_logs (user_id, action, details, ip_address) VALUES ($1, $2, $3, $4)`, 
+      [req.user.id, 'GATEWAY_SECURITY_TOGGLED', `Gateway ${id} switched to ${modeName}`, req.ip]);
+
+    await db.query(
+      `INSERT INTO alerts (gateway_id, severity, message) VALUES ($1, $2, $3)`,
+      [id, is_secure ? 'INFO' : 'WARNING', `Gateway ${id} security mode toggled to ${is_secure ? 'Encrypted (TLS/HTTPS)' : 'Plaintext (HTTP)'}.`]
+    );
+
+    res.json(gateway);
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ message: 'Server error' });
+  }
+};
+

@@ -108,3 +108,105 @@ exports.runScenario = async (req, res) => {
   await simulationEngine.triggerScenario(name || 'Default Recovery Scenario');
   res.json({ message: 'Scenario started' });
 };
+
+exports.getPipelines = async (req, res) => {
+  try {
+    const result = await db.query(`
+      SELECT p.*, g.name as gateway_name 
+      FROM cloud_pipelines p
+      LEFT JOIN gateways g ON p.gateway_id = g.id
+      ORDER BY p.created_at DESC
+    `);
+    res.json(result.rows);
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ message: 'Server error' });
+  }
+};
+
+exports.createPipeline = async (req, res) => {
+  const { id, name, provider, gateway_id } = req.body;
+  if (!name || !provider) {
+    return res.status(400).json({ message: 'Pipeline Name and Provider are required.' });
+  }
+
+  const pipelineId = id || 'PL-' + provider.toUpperCase() + '-' + Math.floor(Math.random() * 1000);
+
+  try {
+    const existing = await db.query('SELECT id FROM cloud_pipelines WHERE id = $1', [pipelineId]);
+    if (existing.rows.length > 0) {
+      return res.status(400).json({ message: 'Pipeline with this ID already exists.' });
+    }
+
+    const result = await db.query(
+      `INSERT INTO cloud_pipelines (id, name, provider, gateway_id, status)
+       VALUES ($1, $2, $3, $4, 'connected') RETURNING *`,
+      [pipelineId, name, provider, gateway_id || null]
+    );
+
+    await db.query(`INSERT INTO audit_logs (user_id, action, details, ip_address) VALUES ($1, $2, $3, $4)`, 
+      [req.user.id, 'PIPELINE_CREATED', `Cloud pipeline ${pipelineId} created`, req.ip]);
+
+    res.status(201).json(result.rows[0]);
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ message: 'Server error' });
+  }
+};
+
+exports.deletePipeline = async (req, res) => {
+  const { id } = req.params;
+  try {
+    const result = await db.query('DELETE FROM cloud_pipelines WHERE id = $1 RETURNING id', [id]);
+    if (result.rows.length === 0) {
+      return res.status(404).json({ message: 'Pipeline not found.' });
+    }
+
+    await db.query(`INSERT INTO audit_logs (user_id, action, details, ip_address) VALUES ($1, $2, $3, $4)`, 
+      [req.user.id, 'PIPELINE_DELETED', `Cloud pipeline ${id} deleted`, req.ip]);
+
+    res.json({ message: 'Cloud pipeline deleted successfully.' });
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ message: 'Server error' });
+  }
+};
+
+exports.updatePipelineStatus = async (req, res) => {
+  const { id } = req.params;
+  const { status } = req.body; 
+
+  try {
+    const result = await db.query(
+      'UPDATE cloud_pipelines SET status = $1 WHERE id = $2 RETURNING *',
+      [status, id]
+    );
+
+    if (result.rows.length === 0) {
+      return res.status(404).json({ message: 'Pipeline not found.' });
+    }
+
+    const pipeline = result.rows[0];
+
+    await db.query(`INSERT INTO audit_logs (user_id, action, details, ip_address) VALUES ($1, $2, $3, $4)`, 
+      [req.user.id, 'PIPELINE_STATUS_CHANGED', `Pipeline ${id} status set to ${status}`, req.ip]);
+
+    if (status === 'disconnected') {
+      await db.query(
+        `INSERT INTO alerts (gateway_id, severity, message) VALUES ($1, $2, $3)`,
+        [pipeline.gateway_id, 'CRITICAL', `Cloud pipeline ${id} was disconnected. Transmission pipelines are dropping packets!`]
+      );
+    } else if (status === 'connected') {
+      await db.query(
+        `INSERT INTO alerts (gateway_id, severity, message) VALUES ($1, $2, $3)`,
+        [pipeline.gateway_id, 'INFO', `Cloud pipeline ${id} has successfully established connection. Flow stabilized.`]
+      );
+    }
+
+    res.json(pipeline);
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ message: 'Server error' });
+  }
+};
+

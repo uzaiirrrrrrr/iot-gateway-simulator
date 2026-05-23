@@ -95,9 +95,23 @@ class SimulationEngine {
 
         const devices = await db.query(`SELECT * FROM devices WHERE gateway_id = $1 AND status = 'active'`, [gw.id]);
 
+        // Check if this gateway maps to any disconnected pipeline
+        const pipelinesResult = await db.query(`SELECT status FROM cloud_pipelines WHERE gateway_id = $1`, [gw.id]);
+        const hasDisconnectedPipeline = pipelinesResult.rows.some(p => p.status === 'disconnected');
+        const packetStatus = hasDisconnectedPipeline ? 'failed' : 'success';
+
         for (let dev of devices.rows) {
-          const isSecure = Math.random() > 0.3; 
-          const latency = Math.floor(Math.random() * 200) + 10;
+          const isSecure = gw.is_secure !== false; // Default to true if not defined
+          
+          // Model realistic latency: TLS encryption adds cryptographic and handshake overhead
+          let latency;
+          if (isSecure) {
+              // Secure mode (TLS/HTTPS): 70ms to 180ms baseline, simulating cryptographic validation
+              latency = Math.floor(Math.random() * 110) + 70;
+          } else {
+              // Insecure mode (HTTP): 10ms to 40ms baseline, unencrypted rapid transmission
+              latency = Math.floor(Math.random() * 30) + 10;
+          }
           
           // Generate context-aware data
           let payload;
@@ -115,12 +129,21 @@ class SimulationEngine {
 
           await db.query(
             `INSERT INTO traffic_logs (device_id, gateway_id, payload_size, is_secure, latency, status, payload)
-             VALUES ($1, $2, $3, $4, $5, 'success', $6)`,
-            [dev.id, dev.gateway_id, payloadSize, isSecure, latency, payload]
+             VALUES ($1, $2, $3, $4, $5, $6, $7)`,
+            [dev.id, dev.gateway_id, payloadSize, isSecure, latency, packetStatus, payload]
           );
 
           // Update device view with last payload
           await db.query(`UPDATE devices SET last_payload = $1 WHERE id = $2`, [payload, dev.id]);
+
+          // Trigger alert if there is a failed packet transmission due to pipeline outage
+          if (packetStatus === 'failed' && Math.random() > 0.7) {
+              await db.query(
+                `INSERT INTO alerts (gateway_id, severity, message)
+                 VALUES ($1, 'WARNING', 'Packet transmission drop on Gateway ${gw.id}: Cloud Ingestion Pipeline Offline')`,
+                [gw.id]
+              );
+          }
         }
       }
     } catch (error) {
