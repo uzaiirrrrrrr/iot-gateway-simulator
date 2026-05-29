@@ -10,5 +10,6 @@ router.post('/logout', authController.logout);
 router.post('/logout-all', verifyToken, authController.logoutAll);
 router.post('/forgot-password', authController.forgotPassword);
 router.post('/reset-password', authController.resetPassword);
+router.post('/verify-device', authController.verifyDevice);
 
 module.exports = router;

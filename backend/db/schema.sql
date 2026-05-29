@@ -7,6 +7,8 @@ CREATE TABLE IF NOT EXISTS users (
   status VARCHAR(50) DEFAULT 'active',
   reset_token VARCHAR(255),
   reset_token_expires TIMESTAMP,
+  device_otp VARCHAR(255),
+  device_otp_expires TIMESTAMP,
   created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
 
@@ -109,4 +111,22 @@ CREATE TABLE IF NOT EXISTS cloud_pipelines (
   gateway_id VARCHAR(50) REFERENCES gateways(id) ON DELETE SET NULL,
   created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
+
+CREATE TABLE IF NOT EXISTS user_devices (
+  id SERIAL PRIMARY KEY,
+  user_id INT REFERENCES users(id) ON DELETE CASCADE,
+  device_id VARCHAR(255) NOT NULL,
+  device_name VARCHAR(255),
+  verified_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+  UNIQUE(user_id, device_id)
+);
+
+CREATE TABLE IF NOT EXISTS cloud_storage_logs (
+  id SERIAL PRIMARY KEY,
+  device_id VARCHAR(50) REFERENCES devices(id) ON DELETE CASCADE,
+  gateway_id VARCHAR(50) REFERENCES gateways(id) ON DELETE CASCADE,
+  payload TEXT,
+  stored_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+
 

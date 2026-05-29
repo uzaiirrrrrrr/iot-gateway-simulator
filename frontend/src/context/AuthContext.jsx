@@ -3,6 +3,36 @@ import axios from 'axios';
 
 export const AuthContext = createContext();
 
+// Generate or retrieve a persistent device fingerprint
+const getDeviceId = () => {
+  let deviceId = localStorage.getItem('iot_gateway_device_id');
+  if (!deviceId) {
+    // Generate a UUID-like identifier
+    deviceId = 'dev-' + crypto.randomUUID();
+    localStorage.setItem('iot_gateway_device_id', deviceId);
+  }
+  return deviceId;
+};
+
+const getDeviceName = () => {
+  const ua = navigator.userAgent;
+  let browser = 'Unknown Browser';
+  let os = 'Unknown OS';
+
+  if (ua.includes('Chrome') && !ua.includes('Edg')) browser = 'Chrome';
+  else if (ua.includes('Firefox')) browser = 'Firefox';
+  else if (ua.includes('Safari') && !ua.includes('Chrome')) browser = 'Safari';
+  else if (ua.includes('Edg')) browser = 'Edge';
+
+  if (ua.includes('Windows')) os = 'Windows';
+  else if (ua.includes('Mac OS')) os = 'macOS';
+  else if (ua.includes('Linux')) os = 'Linux';
+  else if (ua.includes('Android')) os = 'Android';
+  else if (ua.includes('iPhone') || ua.includes('iPad')) os = 'iOS';
+
+  return `${browser} / ${os}`;
+};
+
 export const AuthProvider = ({ children }) => {
   const [user, setUser] = useState(null);
   const [token, setToken] = useState(localStorage.getItem('token'));
@@ -88,7 +118,29 @@ export const AuthProvider = ({ children }) => {
   }, [token, refreshToken, refreshAccessToken]);
 
   const login = async (email, password, rememberMe) => {
-    const res = await axios.post('http://localhost:5000/api/auth/login', { email, password, rememberMe });
+    const deviceId = getDeviceId();
+    const deviceName = getDeviceName();
+
+    const res = await axios.post('http://localhost:5000/api/auth/login', {
+      email, password, rememberMe, deviceId, deviceName
+    });
+    localStorage.setItem('token', res.data.token);
+    localStorage.setItem('refreshToken', res.data.refreshToken);
+    localStorage.setItem('user', JSON.stringify(res.data.user));
+    setToken(res.data.token);
+    setRefreshToken(res.data.refreshToken);
+    setUser(res.data.user);
+    axios.defaults.headers.common['Authorization'] = `Bearer ${res.data.token}`;
+    return res.data.user;
+  };
+
+  const verifyDevice = async (email, otp, rememberMe) => {
+    const deviceId = getDeviceId();
+    const deviceName = getDeviceName();
+
+    const res = await axios.post('http://localhost:5000/api/auth/verify-device', {
+      email, otp, deviceId, deviceName, rememberMe
+    });
     localStorage.setItem('token', res.data.token);
     localStorage.setItem('refreshToken', res.data.refreshToken);
     localStorage.setItem('user', JSON.stringify(res.data.user));
@@ -112,7 +164,7 @@ export const AuthProvider = ({ children }) => {
   }, [token, logout]);
 
   return (
-    <AuthContext.Provider value={{ user, token, loading, login, logout, logoutAll, refreshAccessToken }}>
+    <AuthContext.Provider value={{ user, token, loading, login, verifyDevice, logout, logoutAll, refreshAccessToken }}>
       {children}
     </AuthContext.Provider>
   );

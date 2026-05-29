@@ -66,7 +66,7 @@ const generateRefreshToken = async (userId) => {
 };
 
 exports.login = async (req, res) => {
-  const { email, password, rememberMe } = req.body;
+  const { email, password, rememberMe, deviceId, deviceName } = req.body;
 
   try {
     const userResult = await db.query('SELECT * FROM users WHERE email = $1', [email]);
@@ -85,6 +85,54 @@ exports.login = async (req, res) => {
       return res.status(403).json({ message: 'User account is not active.' });
     }
 
+    // --- Device Registration Check ---
+    if (deviceId) {
+      const devicesResult = await db.query('SELECT * FROM user_devices WHERE user_id = $1', [user.id]);
+      const registeredDevices = devicesResult.rows;
+
+      if (registeredDevices.length === 0) {
+        // First device ever — auto-register with zero friction
+        await db.query(
+          'INSERT INTO user_devices (user_id, device_id, device_name) VALUES ($1, $2, $3) ON CONFLICT (user_id, device_id) DO NOTHING',
+          [user.id, deviceId, deviceName || 'Unknown Device']
+        );
+        await db.query(`INSERT INTO audit_logs (user_id, action, details, ip_address) VALUES ($1, $2, $3, $4)`,
+          [user.id, 'DEVICE_AUTO_REGISTERED', `First device auto-registered: ${deviceName || deviceId}`, req.ip]);
+      } else {
+        // Check if this specific device is registered
+        const knownDevice = registeredDevices.find(d => d.device_id === deviceId);
+        if (!knownDevice) {
+          // UNRECOGNIZED DEVICE — block login, generate device OTP challenge
+          const otp = Math.floor(100000 + Math.random() * 900000).toString();
+          const expiresAt = new Date(Date.now() + 10 * 60 * 1000); // 10 minutes
+
+          await db.query(
+            'UPDATE users SET device_otp = $1, device_otp_expires = $2 WHERE id = $3',
+            [otp, expiresAt, user.id]
+          );
+
+          await db.query(`INSERT INTO audit_logs (user_id, action, details, ip_address) VALUES ($1, $2, $3, $4)`,
+            [user.id, 'UNRECOGNIZED_DEVICE_ACCESS_ATTEMPT', `Unrecognized device: ${deviceName || deviceId}. OTP challenge initiated.`, req.ip]);
+
+          console.log(`\n=============================================`);
+          console.log(`[DEVICE VERIFICATION OTP]`);
+          console.log(`User: ${user.email}`);
+          console.log(`Device: ${deviceName || deviceId}`);
+          console.log(`OTP Code: ${otp}`);
+          console.log(`Expires: ${expiresAt.toLocaleString()}`);
+          console.log(`=============================================\n`);
+
+          return res.status(403).json({
+            status: 'device_verification_required',
+            message: 'Unrecognized device detected. A verification code has been transmitted.',
+            simulationOtp: otp,
+            email: user.email
+          });
+        }
+      }
+    }
+    // --- End Device Check ---
+
     const token = jwt.sign(
       { id: user.id, email: user.email, role: user.role },
       process.env.JWT_SECRET,
@@ -93,8 +141,8 @@ exports.login = async (req, res) => {
 
     const refreshToken = await generateRefreshToken(user.id);
 
-    await db.query(`INSERT INTO audit_logs (user_id, action, details, ip_address) VALUES ($1, $2, $3, $4)`, 
-      [user.id, 'USER_LOGIN', 'User logged in successfully', req.ip]);
+    await db.query(`INSERT INTO audit_logs (user_id, action, details, ip_address) VALUES ($1, $2, $3, $4)`,
+      [user.id, 'USER_LOGIN', `User logged in from device: ${deviceName || 'unknown'}`, req.ip]);
 
     res.json({ token, refreshToken, user: { id: user.id, email: user.email, role: user.role } });
   } catch (error) {
@@ -247,5 +295,63 @@ exports.resetPassword = async (req, res) => {
   } catch (error) {
     console.error(error);
     res.status(500).json({ message: 'Server error during key reset.' });
+  }
+};
+
+exports.verifyDevice = async (req, res) => {
+  const { email, otp, deviceId, deviceName, rememberMe } = req.body;
+
+  if (!email || !otp || !deviceId) {
+    return res.status(400).json({ message: 'Email, OTP code, and device ID are required.' });
+  }
+
+  try {
+    const userResult = await db.query('SELECT * FROM users WHERE email = $1', [email]);
+    if (userResult.rows.length === 0) {
+      return res.status(400).json({ message: 'Invalid identity.' });
+    }
+
+    const user = userResult.rows[0];
+
+    if (!user.device_otp || user.device_otp !== otp) {
+      return res.status(400).json({ message: 'Invalid or incorrect device verification code.' });
+    }
+
+    const expiresAt = new Date(user.device_otp_expires);
+    if (expiresAt < new Date()) {
+      return res.status(400).json({ message: 'Device verification code has expired (10-min limit).' });
+    }
+
+    // Register the device
+    await db.query(
+      'INSERT INTO user_devices (user_id, device_id, device_name) VALUES ($1, $2, $3) ON CONFLICT (user_id, device_id) DO NOTHING',
+      [user.id, deviceId, deviceName || 'Unknown Device']
+    );
+
+    // Clear OTP fields
+    await db.query(
+      'UPDATE users SET device_otp = NULL, device_otp_expires = NULL WHERE id = $1',
+      [user.id]
+    );
+
+    // Generate session tokens
+    const token = jwt.sign(
+      { id: user.id, email: user.email, role: user.role },
+      process.env.JWT_SECRET,
+      { expiresIn: rememberMe ? '7d' : '24h' }
+    );
+
+    const refreshToken = await generateRefreshToken(user.id);
+
+    // Audit logs
+    await db.query(`INSERT INTO audit_logs (user_id, action, details, ip_address) VALUES ($1, $2, $3, $4)`,
+      [user.id, 'DEVICE_REGISTERED', `New device registered: ${deviceName || deviceId}`, req.ip]);
+    await db.query(`INSERT INTO audit_logs (user_id, action, details, ip_address) VALUES ($1, $2, $3, $4)`,
+      [user.id, 'USER_LOGIN', `User logged in after device verification from: ${deviceName || deviceId}`, req.ip]);
+
+    res.json({ token, refreshToken, user: { id: user.id, email: user.email, role: user.role } });
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ message: 'Server error during device verification.' });
   }
 };

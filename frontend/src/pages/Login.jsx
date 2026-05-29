@@ -1,15 +1,21 @@
-import React, { useState, useContext } from 'react';
+import React, { useState, useContext, useEffect } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import { AuthContext } from '../context/AuthContext';
-import { Activity, Lock, Mail, ShieldCheck, Cpu } from 'lucide-react';
-import { motion } from 'framer-motion';
+import { Activity, Lock, Mail, ShieldCheck, Cpu, KeyRound, ArrowRight } from 'lucide-react';
+import { motion, AnimatePresence } from 'framer-motion';
 
 const Login = () => {
   const [email, setEmail] = useState('admin@io.com');
   const [password, setPassword] = useState('admin123');
   const [rememberMe, setRememberMe] = useState(false);
   const [error, setError] = useState('');
-  const { login } = useContext(AuthContext);
+  
+  // OTP Challenge State
+  const [showOtpChallenge, setShowOtpChallenge] = useState(false);
+  const [otp, setOtp] = useState('');
+  const [isVerifying, setIsVerifying] = useState(false);
+
+  const { login, verifyDevice } = useContext(AuthContext);
   const navigate = useNavigate();
 
   const handleSubmit = async (e) => {
@@ -19,7 +25,26 @@ const Login = () => {
       await login(email, password, rememberMe);
       navigate('/gateways');
     } catch (err) {
-      setError(err.response?.data?.message || 'Login failed. Please check credentials.');
+      if (err.response?.data?.status === 'device_verification_required') {
+        setShowOtpChallenge(true);
+        setError('');
+      } else {
+        setError(err.response?.data?.message || 'Login failed. Please check credentials.');
+      }
+    }
+  };
+
+  const handleVerifyDevice = async (e) => {
+    e.preventDefault();
+    setError('');
+    setIsVerifying(true);
+    try {
+      await verifyDevice(email, otp, rememberMe);
+      navigate('/gateways');
+    } catch (err) {
+      setError(err.response?.data?.message || 'Device verification failed. Invalid code.');
+    } finally {
+      setIsVerifying(false);
     }
   };
 
@@ -139,85 +164,166 @@ const Login = () => {
             </motion.div>
           )}
 
-          <form onSubmit={handleSubmit} className="space-y-7">
-            <div className="group">
-              <label className="block text-xs font-bold text-slate-500 uppercase tracking-widest mb-3 transition-colors group-focus-within:text-purple-600">
-                Email Identity
-              </label>
-              <div className="relative">
-                <div className="absolute inset-y-0 left-0 pl-5 flex items-center pointer-events-none">
-                  <Mail size={18} className="text-slate-400 group-focus-within:text-purple-600 transition-colors" />
-                </div>
-                <input
-                  type="email"
-                  value={email}
-                  onChange={(e) => setEmail(e.target.value)}
-                  placeholder="operator@gmail.com"
-                  className="w-full bg-slate-50 border border-slate-200 text-slate-800 rounded-2xl pl-14 px-5 py-4 outline-none focus:border-purple-400 transition-all focus:ring-4 focus:ring-purple-100 hover:border-slate-300"
-                  required
-                />
-              </div>
-            </div>
+          <div className="relative">
+            <AnimatePresence mode="wait">
+              {!showOtpChallenge ? (
+                <motion.div
+                  key="login-form"
+                  initial={{ opacity: 0, rotateY: -90 }}
+                  animate={{ opacity: 1, rotateY: 0 }}
+                  exit={{ opacity: 0, rotateY: 90 }}
+                  transition={{ duration: 0.4 }}
+                >
+                  <form onSubmit={handleSubmit} className="space-y-7">
+                    <div className="group">
+                      <label className="block text-xs font-bold text-slate-500 uppercase tracking-widest mb-3 transition-colors group-focus-within:text-purple-600">
+                        Email Identity
+                      </label>
+                      <div className="relative">
+                        <div className="absolute inset-y-0 left-0 pl-5 flex items-center pointer-events-none">
+                          <Mail size={18} className="text-slate-400 group-focus-within:text-purple-600 transition-colors" />
+                        </div>
+                        <input
+                          type="email"
+                          value={email}
+                          onChange={(e) => setEmail(e.target.value)}
+                          placeholder="operator@gmail.com"
+                          className="w-full bg-slate-50 border border-slate-200 text-slate-800 rounded-2xl pl-14 px-5 py-4 outline-none focus:border-purple-400 transition-all focus:ring-4 focus:ring-purple-100 hover:border-slate-300"
+                          required
+                        />
+                      </div>
+                    </div>
 
-            <div className="group">
-              <label className="block text-xs font-bold text-slate-500 uppercase tracking-widest mb-3 transition-colors group-focus-within:text-purple-600">
-                Security Key
-              </label>
-              <div className="relative">
-                <div className="absolute inset-y-0 left-0 pl-5 flex items-center pointer-events-none">
-                  <Lock size={18} className="text-slate-400 group-focus-within:text-purple-600 transition-colors" />
-                </div>
-                <input
-                  type="password"
-                  value={password}
-                  onChange={(e) => setPassword(e.target.value)}
-                  placeholder="••••••••"
-                  className="w-full bg-slate-50 border border-slate-200 text-slate-800 rounded-2xl pl-14 px-5 py-4 outline-none focus:border-purple-400 transition-all focus:ring-4 focus:ring-purple-100 hover:border-slate-300"
-                  required
-                />
-              </div>
-            </div>
+                    <div className="group">
+                      <label className="block text-xs font-bold text-slate-500 uppercase tracking-widest mb-3 transition-colors group-focus-within:text-purple-600">
+                        Security Key
+                      </label>
+                      <div className="relative">
+                        <div className="absolute inset-y-0 left-0 pl-5 flex items-center pointer-events-none">
+                          <Lock size={18} className="text-slate-400 group-focus-within:text-purple-600 transition-colors" />
+                        </div>
+                        <input
+                          type="password"
+                          value={password}
+                          onChange={(e) => setPassword(e.target.value)}
+                          placeholder="••••••••"
+                          className="w-full bg-slate-50 border border-slate-200 text-slate-800 rounded-2xl pl-14 px-5 py-4 outline-none focus:border-purple-400 transition-all focus:ring-4 focus:ring-purple-100 hover:border-slate-300"
+                          required
+                        />
+                      </div>
+                    </div>
 
-            <div className="flex items-center justify-between">
-              <label className="flex items-center gap-3 cursor-pointer group">
-                <div className="relative">
-                  <input
-                    type="checkbox"
-                    checked={rememberMe}
-                    onChange={(e) => setRememberMe(e.target.checked)}
-                    className="peer sr-only"
-                  />
-                  <div className="w-5 h-5 border-2 border-slate-300 rounded-lg bg-transparent peer-checked:bg-purple-600 peer-checked:border-purple-600 transition-all shadow-[0_0_10px_rgba(124,58,237,0)] peer-checked:shadow-[0_0_15px_rgba(124,58,237,0.2)]"></div>
-                  <div className="absolute inset-0 flex items-center justify-center text-white opacity-0 peer-checked:opacity-100 transition-opacity">
-                    <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="4" d="M5 13l4 4L19 7" />
-                    </svg>
+                    <div className="flex items-center justify-between">
+                      <label className="flex items-center gap-3 cursor-pointer group">
+                        <div className="relative">
+                          <input
+                            type="checkbox"
+                            checked={rememberMe}
+                            onChange={(e) => setRememberMe(e.target.checked)}
+                            className="peer sr-only"
+                          />
+                          <div className="w-5 h-5 border-2 border-slate-300 rounded-lg bg-transparent peer-checked:bg-purple-600 peer-checked:border-purple-600 transition-all shadow-[0_0_10px_rgba(124,58,237,0)] peer-checked:shadow-[0_0_15px_rgba(124,58,237,0.2)]"></div>
+                          <div className="absolute inset-0 flex items-center justify-center text-white opacity-0 peer-checked:opacity-100 transition-opacity">
+                            <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="4" d="M5 13l4 4L19 7" />
+                            </svg>
+                          </div>
+                        </div>
+                        <span className="text-sm text-slate-500 group-hover:text-slate-800 transition-colors font-semibold">Remember Me</span>
+                      </label>
+                      
+                      <Link to="/forgot-password" className="text-sm text-purple-600 hover:text-purple-500 font-bold transition-all hover:underline tracking-tight">
+                        Forgot Security Key?
+                      </Link>
+                    </div>
+
+                    <motion.button
+                      whileHover={{ scale: 1.02, boxShadow: "0 0 25px rgba(124, 58, 237, 0.2)" }}
+                      whileTap={{ scale: 0.98 }}
+                      type="submit"
+                      className="w-full bg-purple-600 hover:bg-purple-500 text-white font-bold py-5 rounded-2xl shadow-lg shadow-purple-200 transition-all flex items-center justify-center gap-4 group"
+                    >
+                      <span>Initialize Connection</span>
+                      <Activity size={20} className="group-hover:animate-pulse" />
+                    </motion.button>
+                  </form>
+
+                  <div className="mt-12 text-center text-sm text-slate-400 font-semibold">
+                    Unauthorized?{' '}
+                    <Link to="/register" className="text-purple-600 hover:text-purple-500 transition-colors font-bold tracking-tight">
+                      REGISTER NEW NODE
+                    </Link>
                   </div>
-                </div>
-                <span className="text-sm text-slate-500 group-hover:text-slate-800 transition-colors font-semibold">Remember Me</span>
-              </label>
-              
-              <Link to="/forgot-password" className="text-sm text-purple-600 hover:text-purple-500 font-bold transition-all hover:underline tracking-tight">
-                Forgot Security Key?
-              </Link>
-            </div>
+                </motion.div>
+              ) : (
+                <motion.div
+                  key="otp-challenge"
+                  initial={{ opacity: 0, rotateY: 90 }}
+                  animate={{ opacity: 1, rotateY: 0 }}
+                  exit={{ opacity: 0, rotateY: -90 }}
+                  transition={{ duration: 0.4 }}
+                  className="bg-white rounded-3xl"
+                >
+                  <div className="text-center mb-8">
+                    <div className="inline-flex items-center justify-center w-16 h-16 rounded-full bg-purple-100 mb-6 border-4 border-purple-50 shadow-inner">
+                      <ShieldCheck className="text-purple-600 w-8 h-8" />
+                    </div>
+                    <h3 className="text-2xl font-bold text-slate-900 mb-2 tracking-tight">Unrecognized Device</h3>
+                    <p className="text-slate-500 text-sm leading-relaxed px-4">
+                      We sent a 6-digit verification code to <strong>{email}</strong>. Enter it below to register this device.
+                    </p>
+                  </div>
 
-            <motion.button
-              whileHover={{ scale: 1.02, boxShadow: "0 0 25px rgba(124, 58, 237, 0.2)" }}
-              whileTap={{ scale: 0.98 }}
-              type="submit"
-              className="w-full bg-purple-600 hover:bg-purple-500 text-white font-bold py-5 rounded-2xl shadow-lg shadow-purple-200 transition-all flex items-center justify-center gap-4 group"
-            >
-              <span>Initialize Connection</span>
-              <Activity size={20} className="group-hover:animate-pulse" />
-            </motion.button>
-          </form>
+                  <form onSubmit={handleVerifyDevice} className="space-y-6">
+                    <div className="group">
+                      <label className="block text-xs font-bold text-slate-500 uppercase tracking-widest mb-3 transition-colors group-focus-within:text-purple-600">
+                        Verification Code
+                      </label>
+                      <div className="relative">
+                        <div className="absolute inset-y-0 left-0 pl-5 flex items-center pointer-events-none">
+                          <KeyRound size={18} className="text-slate-400 group-focus-within:text-purple-600 transition-colors" />
+                        </div>
+                        <input
+                          type="text"
+                          maxLength="6"
+                          value={otp}
+                          onChange={(e) => setOtp(e.target.value.replace(/\D/g, ''))}
+                          placeholder="000000"
+                          className="w-full bg-slate-50 border border-slate-200 text-slate-800 rounded-2xl pl-14 px-5 py-4 outline-none focus:border-purple-400 transition-all focus:ring-4 focus:ring-purple-100 hover:border-slate-300 tracking-[0.5em] text-center text-xl font-mono font-bold placeholder:tracking-normal placeholder:font-sans placeholder:text-base placeholder:text-slate-400"
+                          required
+                        />
+                      </div>
+                    </div>
 
-          <div className="mt-12 text-center text-sm text-slate-400 font-semibold">
-            Unauthorized?{' '}
-            <Link to="/register" className="text-purple-600 hover:text-purple-500 transition-colors font-bold tracking-tight">
-              REGISTER NEW NODE
-            </Link>
+                    <motion.button
+                      whileHover={{ scale: 1.02, boxShadow: "0 0 25px rgba(124, 58, 237, 0.2)" }}
+                      whileTap={{ scale: 0.98 }}
+                      type="submit"
+                      disabled={isVerifying || otp.length !== 6}
+                      className="w-full bg-purple-600 hover:bg-purple-500 disabled:bg-slate-300 disabled:cursor-not-allowed text-white font-bold py-5 rounded-2xl shadow-lg shadow-purple-200 transition-all flex items-center justify-center gap-4 group"
+                    >
+                      {isVerifying ? (
+                        <span>Verifying Identity...</span>
+                      ) : (
+                        <>
+                          <span>Verify & Connect</span>
+                          <ArrowRight size={20} className="group-hover:translate-x-1 transition-transform" />
+                        </>
+                      )}
+                    </motion.button>
+                  </form>
+                  
+                  <div className="mt-8 text-center">
+                    <button 
+                      onClick={() => setShowOtpChallenge(false)}
+                      className="text-sm text-slate-400 hover:text-slate-600 transition-colors font-medium"
+                    >
+                      Return to Login
+                    </button>
+                  </div>
+                </motion.div>
+              )}
+            </AnimatePresence>
           </div>
         </div>
       </motion.div>

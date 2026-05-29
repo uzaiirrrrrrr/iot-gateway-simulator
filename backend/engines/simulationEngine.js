@@ -143,6 +143,13 @@ class SimulationEngine {
                  VALUES ($1, 'WARNING', 'Packet transmission drop on Gateway ${gw.id}: Cloud Ingestion Pipeline Offline')`,
                 [gw.id]
               );
+          } else if (packetStatus === 'success') {
+              // Store successfully transmitted payload to the simulated cloud
+              await db.query(
+                `INSERT INTO cloud_storage_logs (device_id, gateway_id, payload)
+                 VALUES ($1, $2, $3)`,
+                [dev.id, gw.id, payload]
+              );
           }
         }
       }
