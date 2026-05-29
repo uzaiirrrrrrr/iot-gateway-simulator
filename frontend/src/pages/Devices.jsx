@@ -50,7 +50,7 @@ const GatewayDropZone = ({ gateway, children, isOver }) => {
     <div 
         ref={setNodeRef} 
         className={`relative transition-all duration-300 rounded-2xl ${
-            isOver ? 'ring-4 ring-blue-500 ring-offset-4 scale-[1.02] bg-blue-50/50' : ''
+            isOver ? 'ring-4 ring-blue-400 ring-offset-4 scale-[1.02] bg-blue-50/50' : ''
         } ${!gateway.is_enabled ? 'opacity-50 grayscale cursor-not-allowed' : ''}`}
     >
       {children}
@@ -109,7 +109,6 @@ const Devices = () => {
           const newHistory = { ...prev };
           devRes.data.forEach(d => {
               const current = newHistory[d.id] || [];
-              // Generate a mock metric (e.g. payload length) if no actual history endpoint
               const metric = d.last_payload ? d.last_payload.length : (Math.random() * 50);
               const updated = [...current, { time: new Date().toLocaleTimeString(), val: metric }].slice(-10);
               newHistory[d.id] = updated;
@@ -117,7 +116,6 @@ const Devices = () => {
           return newHistory;
       });
 
-      // Update global monitor (simulated from last_payloads for "interactive" feel)
       const latestLogs = devRes.data
         .filter(d => d.status === 'active' && d.last_payload)
         .map(d => ({ 
@@ -140,11 +138,10 @@ const Devices = () => {
 
   useEffect(() => {
     fetchData();
-    const interval = setInterval(fetchData, 8000); // Poll every 8s
+    const interval = setInterval(fetchData, 8000);
     return () => clearInterval(interval);
   }, []);
 
-  // Reset to page 1 when filters change
   useEffect(() => {
     setCurrentPage(1);
   }, [searchTerm, typeFilter]);
@@ -279,18 +276,18 @@ const Devices = () => {
             ].map(stat => (
                 <button 
                   key={stat.id}
-                  className="bg-slate-900/40 border border-slate-800/50 p-8 rounded-[2rem] text-left hover:border-purple-500/30 transition-all group relative overflow-hidden backdrop-blur-sm"
+                  className="bg-white border border-slate-200 p-8 rounded-[2rem] text-left hover:border-purple-300 hover:shadow-md transition-all group relative overflow-hidden"
                 >
                     <div className="flex justify-between items-start mb-6 relative z-10">
-                        <div className={`p-4 rounded-2xl bg-slate-800 text-slate-400 group-hover:bg-purple-600 group-hover:text-white group-hover:shadow-[0_0_20px_rgba(168,85,247,0.4)] transition-all duration-500`}>
+                        <div className={`p-4 rounded-2xl bg-slate-100 text-slate-500 group-hover:bg-purple-600 group-hover:text-white group-hover:shadow-lg group-hover:shadow-purple-200 transition-all duration-500`}>
                             <stat.icon size={24} />
                         </div>
-                        <div className="text-[10px] font-black text-slate-600 uppercase tracking-[0.2em]">Telemetry</div>
+                        <div className="text-[10px] font-black text-slate-400 uppercase tracking-[0.2em]">Telemetry</div>
                     </div>
-                    <div className="text-4xl font-black text-white mb-1 relative z-10 tracking-tight">{stat.value}</div>
-                    <div className="text-[10px] font-bold text-slate-500 uppercase tracking-[0.2em] relative z-10">{stat.label}</div>
+                    <div className="text-4xl font-black text-slate-800 mb-1 relative z-10 tracking-tight">{stat.value}</div>
+                    <div className="text-[10px] font-bold text-slate-400 uppercase tracking-[0.2em] relative z-10">{stat.label}</div>
                     
-                    <div className="absolute -bottom-6 -right-6 opacity-[0.02] group-hover:opacity-[0.05] transition-opacity duration-500">
+                    <div className="absolute -bottom-6 -right-6 opacity-[0.03] group-hover:opacity-[0.06] transition-opacity duration-500">
                         <stat.icon size={120} />
                     </div>
                 </button>
@@ -298,25 +295,25 @@ const Devices = () => {
         </div>
 
         {/* Search & Tool Bar */}
-        <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-6 bg-slate-900/40 p-6 rounded-[2rem] border border-slate-800/50 backdrop-blur-md">
+        <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-6 bg-white p-6 rounded-[2rem] border border-slate-200 shadow-sm">
           <div className="flex flex-1 items-center gap-4">
               <div className="relative flex-1 max-w-md group">
-                  <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-500 group-focus-within:text-purple-400 transition-colors" size={18} />
+                  <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400 group-focus-within:text-purple-500 transition-colors" size={18} />
                   <input
                       type="text"
                       placeholder="Scan device registry..."
                       value={searchTerm}
                       onChange={(e) => setSearchTerm(e.target.value)}
-                      className="w-full pl-12 pr-4 py-3 bg-slate-950/50 border border-slate-800 rounded-2xl outline-none focus:ring-4 focus:ring-purple-500/10 focus:border-purple-500/50 transition-all text-sm text-slate-300 placeholder:text-slate-700"
+                      className="w-full pl-12 pr-4 py-3 bg-slate-50 border border-slate-200 rounded-2xl outline-none focus:ring-4 focus:ring-purple-100 focus:border-purple-400 transition-all text-sm text-slate-700 placeholder:text-slate-400"
                   />
               </div>
-              <div className="hidden xl:flex items-center gap-2 bg-purple-500/5 border border-purple-500/10 p-2 px-4 rounded-xl text-[10px] font-black uppercase tracking-widest text-purple-400">
+              <div className="hidden xl:flex items-center gap-2 bg-purple-50 border border-purple-200 p-2 px-4 rounded-xl text-[10px] font-black uppercase tracking-widest text-purple-600">
                   <MousePointer2 size={14} />
                   Drag to Re-Map Infrastructure
               </div>
               <button 
                   onClick={() => setShowGlobalMonitor(!showGlobalMonitor)}
-                  className={`flex items-center gap-3 px-6 py-3 rounded-2xl text-xs font-black uppercase tracking-widest transition-all shadow-xl ${showGlobalMonitor ? 'bg-purple-600 text-white shadow-purple-900/20' : 'bg-slate-900 border border-slate-800 text-slate-400 hover:text-white hover:border-slate-600'}`}
+                  className={`flex items-center gap-3 px-6 py-3 rounded-2xl text-xs font-black uppercase tracking-widest transition-all shadow-md ${showGlobalMonitor ? 'bg-purple-600 text-white shadow-purple-200' : 'bg-white border border-slate-200 text-slate-500 hover:text-slate-700 hover:border-slate-300'}`}
               >
                   <Terminal size={16} className={showGlobalMonitor ? 'animate-pulse' : ''} />
                   Live Processor
@@ -328,21 +325,21 @@ const Devices = () => {
                 <select 
                     value={typeFilter}
                     onChange={(e) => setTypeFilter(e.target.value)}
-                    className="appearance-none pl-6 pr-12 py-3 bg-slate-950/50 border border-slate-800 rounded-2xl text-sm outline-none focus:border-purple-500/50 transition-all text-slate-300 font-bold tracking-wide cursor-pointer hover:border-slate-700"
+                    className="appearance-none pl-6 pr-12 py-3 bg-slate-50 border border-slate-200 rounded-2xl text-sm outline-none focus:border-purple-400 transition-all text-slate-700 font-bold tracking-wide cursor-pointer hover:border-slate-300"
                 >
-                    <option value="all" className="bg-[#0a0c1a]">All Classifications</option>
-                    <option value="Sensor" className="bg-[#0a0c1a]">Environment Sensors</option>
-                    <option value="Actuator" className="bg-[#0a0c1a]">Logic Actuators</option>
-                    <option value="Camera" className="bg-[#0a0c1a]">Visual Nodes</option>
-                    <option value="Motion" className="bg-[#0a0c1a]">Motion Matrix</option>
+                    <option value="all">All Classifications</option>
+                    <option value="Sensor">Environment Sensors</option>
+                    <option value="Actuator">Logic Actuators</option>
+                    <option value="Camera">Visual Nodes</option>
+                    <option value="Motion">Motion Matrix</option>
                 </select>
-                <Filter size={14} className="absolute right-4 top-1/2 -translate-y-1/2 text-slate-500 pointer-events-none" />
+                <Filter size={14} className="absolute right-4 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none" />
               </div>
 
               {(user?.role === 'Admin' || user?.role === 'User') && (
                   <button 
                       onClick={() => setIsAdding(!isAdding)}
-                      className="bg-emerald-600 hover:bg-emerald-500 text-white px-8 py-3 rounded-2xl flex items-center gap-3 transition-all font-black text-sm shadow-xl shadow-emerald-900/20 active:scale-95 group"
+                      className="bg-emerald-600 hover:bg-emerald-500 text-white px-8 py-3 rounded-2xl flex items-center gap-3 transition-all font-black text-sm shadow-lg shadow-emerald-200 active:scale-95 group"
                   >
                       <Plus size={20} className="group-hover:rotate-90 transition-transform duration-300" />
                       Provision
@@ -355,50 +352,50 @@ const Devices = () => {
           <motion.div 
               initial={{ height: 0, opacity: 0 }}
               animate={{ height: 'auto', opacity: 1 }}
-              className="bg-[#0a0c1a] p-10 rounded-[2.5rem] border border-emerald-500/30 shadow-2xl overflow-hidden relative"
+              className="bg-white p-10 rounded-[2.5rem] border border-emerald-200 shadow-lg overflow-hidden relative"
           >
             <div className="absolute top-0 right-0 p-10 opacity-5">
                 <Cpu size={120} className="text-emerald-500" />
             </div>
-            <h3 className="text-xl font-black mb-8 flex items-center gap-4 text-white relative z-10">
-              <div className="p-2.5 bg-emerald-500/10 rounded-xl">
-                <Cpu className="text-emerald-400" size={24} />
+            <h3 className="text-xl font-black mb-8 flex items-center gap-4 text-slate-900 relative z-10">
+              <div className="p-2.5 bg-emerald-100 rounded-xl">
+                <Cpu className="text-emerald-600" size={24} />
               </div>
               Integrated Device Provisioning
             </h3>
             <form onSubmit={handleCreate} className="grid grid-cols-1 md:grid-cols-4 gap-8 relative z-10">
               <div className="space-y-2">
-                  <label className="text-[10px] font-black text-slate-500 uppercase tracking-[0.2em] ml-1">Asset Identifier</label>
+                  <label className="text-[10px] font-black text-slate-400 uppercase tracking-[0.2em] ml-1">Asset Identifier</label>
                   <input
                       type="text"
                       placeholder="Unique Serial"
                       value={newDevice.id}
                       onChange={(e) => setNewDevice({...newDevice, id: e.target.value})}
-                      className="w-full px-5 py-3.5 bg-slate-900/50 border border-slate-800 rounded-xl outline-none focus:border-emerald-500/50 text-slate-300 text-sm placeholder:text-slate-700"
+                      className="w-full px-5 py-3.5 bg-slate-50 border border-slate-200 rounded-xl outline-none focus:border-emerald-400 text-slate-700 text-sm placeholder:text-slate-400"
                   />
               </div>
               <div className="space-y-2">
-                  <label className="text-[10px] font-black text-slate-500 uppercase tracking-[0.2em] ml-1">Assigned Name</label>
+                  <label className="text-[10px] font-black text-slate-400 uppercase tracking-[0.2em] ml-1">Assigned Name</label>
                   <input
                       type="text"
                       placeholder="e.g. Node_SEC_01"
                       value={newDevice.name}
                       onChange={(e) => setNewDevice({...newDevice, name: e.target.value})}
-                      className="w-full px-5 py-3.5 bg-slate-900/50 border border-slate-800 rounded-xl outline-none focus:border-emerald-500/50 text-slate-300 text-sm placeholder:text-slate-700"
+                      className="w-full px-5 py-3.5 bg-slate-50 border border-slate-200 rounded-xl outline-none focus:border-emerald-400 text-slate-700 text-sm placeholder:text-slate-400"
                       required
                   />
               </div>
               <div className="space-y-2">
-                  <label className="text-[10px] font-black text-slate-500 uppercase tracking-[0.2em] ml-1">Parent Infrastructure</label>
+                  <label className="text-[10px] font-black text-slate-400 uppercase tracking-[0.2em] ml-1">Parent Infrastructure</label>
                   <select
                       value={newDevice.gateway_id}
                       onChange={(e) => setNewDevice({...newDevice, gateway_id: e.target.value})}
-                      className="w-full px-5 py-3.5 bg-slate-900/50 border border-slate-800 rounded-xl outline-none focus:border-emerald-500/50 text-slate-300 text-sm font-bold tracking-tight"
+                      className="w-full px-5 py-3.5 bg-slate-50 border border-slate-200 rounded-xl outline-none focus:border-emerald-400 text-slate-700 text-sm font-bold tracking-tight"
                       required
                   >
-                      <option value="" className="bg-[#0a0c1a]">Select Gateway</option>
+                      <option value="">Select Gateway</option>
                       {gateways.map(g => (
-                          <option key={g.id} value={g.id} className="bg-[#0a0c1a]">{g.name} ({g.id})</option>
+                          <option key={g.id} value={g.id}>{g.name} ({g.id})</option>
                       ))}
                   </select>
               </div>
@@ -406,14 +403,14 @@ const Devices = () => {
                   <select
                       value={newDevice.type}
                       onChange={(e) => setNewDevice({...newDevice, type: e.target.value})}
-                      className="flex-1 px-5 py-3.5 bg-slate-900/50 border border-slate-800 rounded-xl outline-none focus:border-emerald-500/50 text-slate-300 text-sm font-bold tracking-tight"
+                      className="flex-1 px-5 py-3.5 bg-slate-50 border border-slate-200 rounded-xl outline-none focus:border-emerald-400 text-slate-700 text-sm font-bold tracking-tight"
                   >
-                      <option value="Sensor" className="bg-[#0a0c1a]">Sensor</option>
-                      <option value="Actuator" className="bg-[#0a0c1a]">Actuator</option>
-                      <option value="Camera" className="bg-[#0a0c1a]">Camera</option>
-                      <option value="Motion" className="bg-[#0a0c1a]">Motion</option>
+                      <option value="Sensor">Sensor</option>
+                      <option value="Actuator">Actuator</option>
+                      <option value="Camera">Camera</option>
+                      <option value="Motion">Motion</option>
                   </select>
-                  <button type="submit" className="bg-white text-black px-8 py-3.5 rounded-xl font-black text-xs uppercase tracking-widest hover:bg-slate-200 transition-all shadow-xl active:scale-95">Commit</button>
+                  <button type="submit" className="bg-emerald-600 text-white px-8 py-3.5 rounded-xl font-black text-xs uppercase tracking-widest hover:bg-emerald-500 transition-all shadow-lg active:scale-95">Commit</button>
               </div>
             </form>
           </motion.div>
@@ -422,53 +419,53 @@ const Devices = () => {
         {/* Board View (DND Optimized) */}
         <div className="space-y-16">
             {gatewaysToRender.length === 0 ? (
-                <div className="bg-slate-900/20 p-24 rounded-[3rem] border border-dashed border-slate-800 text-center text-slate-600 font-bold uppercase tracking-widest text-sm">
+                <div className="bg-white p-24 rounded-[3rem] border border-dashed border-slate-200 text-center text-slate-400 font-bold uppercase tracking-widest text-sm">
                     No infrastructure units available on this page.
                 </div>
             ) : (
                 gatewaysToRender.map(gtw => (
                     <GatewayDropZone key={gtw.id} gateway={gtw}>
-                        <div className="bg-slate-900/40 backdrop-blur-xl rounded-[3rem] border border-slate-800/50 shadow-2xl overflow-hidden transition-all relative">
-                        <div className={`p-8 border-b border-slate-800/30 flex items-center justify-between ${gtw.is_enabled ? 'bg-slate-900/20' : 'bg-red-950/10'}`}>
+                        <div className="bg-white rounded-[3rem] border border-slate-200 shadow-md overflow-hidden transition-all relative">
+                        <div className={`p-8 border-b border-slate-200 flex items-center justify-between ${gtw.is_enabled ? 'bg-slate-50' : 'bg-red-50'}`}>
                             <div className="flex items-center gap-6">
-                                <div className={`p-4 rounded-2xl transition-all duration-500 ${gtw.is_enabled ? 'bg-purple-600 text-white shadow-[0_0_30px_rgba(168,85,247,0.3)]' : 'bg-slate-800 text-slate-500'}`}>
+                                <div className={`p-4 rounded-2xl transition-all duration-500 ${gtw.is_enabled ? 'bg-purple-600 text-white shadow-lg shadow-purple-200' : 'bg-slate-200 text-slate-400'}`}>
                                     <MapPin size={28} />
                                 </div>
                                 <div>
-                                    <h3 className="text-2xl font-black text-white flex items-center gap-4 tracking-tight">
+                                    <h3 className="text-2xl font-black text-slate-900 flex items-center gap-4 tracking-tight">
                                         {gtw.name}
-                                        {!gtw.is_enabled && <span className="text-[10px] bg-red-500/10 text-red-500 border border-red-500/20 px-3 py-1 rounded-full uppercase font-black tracking-widest shadow-lg">OFFLINE_LOCK</span>}
+                                        {!gtw.is_enabled && <span className="text-[10px] bg-red-50 text-red-500 border border-red-200 px-3 py-1 rounded-full uppercase font-black tracking-widest">OFFLINE_LOCK</span>}
                                     </h3>
-                                    <p className="text-xs text-slate-500 font-mono font-bold tracking-widest mt-1 uppercase">{gtw.id}</p>
+                                    <p className="text-xs text-slate-400 font-mono font-bold tracking-widest mt-1 uppercase">{gtw.id}</p>
                                 </div>
                             </div>
                             <div className="text-right">
-                                <div className="text-[10px] font-black text-slate-500 uppercase tracking-[0.2em] mb-2">Connected Units</div>
-                                <div className="text-4xl font-black text-white tracking-tighter">{devices.filter(d => d.gateway_id === gtw.id).length}</div>
+                                <div className="text-[10px] font-black text-slate-400 uppercase tracking-[0.2em] mb-2">Connected Units</div>
+                                <div className="text-4xl font-black text-slate-800 tracking-tighter">{devices.filter(d => d.gateway_id === gtw.id).length}</div>
                             </div>
                         </div>
 
                         <div className="p-10 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-8 min-h-[220px]">
                             {filteredDevices.filter(d => d.gateway_id === gtw.id).length === 0 ? (
-                                <div className="col-span-full flex flex-col items-center justify-center py-12 text-slate-700 gap-4 border-2 border-dashed border-slate-800/50 rounded-[2.5rem] bg-slate-950/20">
-                                    <Cpu size={48} className="opacity-20"/>
-                                    <p className="text-[10px] font-black uppercase tracking-[0.3em] opacity-40">Segment Unpopulated</p>
+                                <div className="col-span-full flex flex-col items-center justify-center py-12 text-slate-300 gap-4 border-2 border-dashed border-slate-200 rounded-[2.5rem] bg-slate-50">
+                                    <Cpu size={48} className="opacity-30"/>
+                                    <p className="text-[10px] font-black uppercase tracking-[0.3em] opacity-40 text-slate-400">Segment Unpopulated</p>
                                 </div>
                             ) : filteredDevices.filter(d => d.gateway_id === gtw.id).map(dev => {
                                 return (
                                     <DraggableDevice key={dev.id} device={dev}>
                                         <motion.div 
                                             whileHover={{ y: -8, scale: 1.02 }}
-                                            className={`bg-slate-900 border border-slate-800 rounded-3xl p-6 shadow-xl transition-all hover:border-purple-500/50 group relative overflow-hidden ${activeId === `dev-${dev.id}` ? 'opacity-0' : ''}`}
+                                            className={`bg-white border border-slate-200 rounded-3xl p-6 shadow-sm transition-all hover:border-purple-300 hover:shadow-lg group relative overflow-hidden ${activeId === `dev-${dev.id}` ? 'opacity-0' : ''}`}
                                         >
                                             <div className="flex justify-between items-start mb-6 relative z-10">
-                                                <div className={`p-3 rounded-2xl transition-all duration-500 ${dev.status === 'active' ? 'bg-emerald-500/10 text-emerald-400 border border-emerald-500/20' : 'bg-slate-800 text-slate-600 border border-slate-700'}`}>
+                                                <div className={`p-3 rounded-2xl transition-all duration-500 ${dev.status === 'active' ? 'bg-emerald-50 text-emerald-600 border border-emerald-200' : 'bg-slate-100 text-slate-400 border border-slate-200'}`}>
                                                     <Cpu size={24} />
                                                 </div>
                                                 <div className="flex gap-2">
                                                     <button 
                                                         onClick={(e) => { e.stopPropagation(); setSelectedDeviceMetadata(dev); }}
-                                                        className="p-2.5 text-slate-500 hover:text-white hover:bg-slate-800 rounded-xl transition-all"
+                                                        className="p-2.5 text-slate-400 hover:text-slate-700 hover:bg-slate-100 rounded-xl transition-all"
                                                         title="Telemetric Details"
                                                     >
                                                         <Info size={18} />
@@ -476,7 +473,7 @@ const Devices = () => {
                                                     {(user?.role === 'Admin' || user?.role === 'User') && (
                                                         <button 
                                                             onClick={(e) => { e.stopPropagation(); handleDelete(dev.id); }}
-                                                            className="p-2.5 text-slate-600 hover:text-red-500 hover:bg-red-500/10 rounded-xl transition-all"
+                                                            className="p-2.5 text-slate-300 hover:text-red-500 hover:bg-red-50 rounded-xl transition-all"
                                                         >
                                                             <Trash2 size={18} />
                                                         </button>
@@ -484,16 +481,16 @@ const Devices = () => {
                                                 </div>
                                             </div>
 
-                                            <h4 className="font-black text-white mb-2 truncate text-base tracking-tight group-hover:text-purple-400 transition-colors">{dev.name}</h4>
+                                            <h4 className="font-black text-slate-800 mb-2 truncate text-base tracking-tight group-hover:text-purple-600 transition-colors">{dev.name}</h4>
                                             
                                             {/* Live Traffic Widget */}
-                                            <div className="mt-6 p-4 bg-slate-950/80 rounded-2xl border border-slate-800/50 relative overflow-hidden">
+                                            <div className="mt-6 p-4 bg-slate-50 rounded-2xl border border-slate-200 relative overflow-hidden">
                                                 <div className="flex items-center justify-between mb-3 relative z-10">
                                                     <div className="flex items-center gap-2">
-                                                        <div className={`h-1.5 w-1.5 rounded-full ${dev.status === 'active' ? 'bg-emerald-400 shadow-[0_0_8px_#34d399] animate-pulse' : 'bg-red-500'}`} />
-                                                        <span className="text-[9px] font-black text-slate-500 uppercase tracking-widest font-mono">Stream_TX</span>
+                                                        <div className={`h-1.5 w-1.5 rounded-full ${dev.status === 'active' ? 'bg-emerald-500 shadow-[0_0_8px_#34d399] animate-pulse' : 'bg-red-400'}`} />
+                                                        <span className="text-[9px] font-black text-slate-400 uppercase tracking-widest font-mono">Stream_TX</span>
                                                     </div>
-                                                    <Zap size={12} className={dev.status === 'active' ? 'text-amber-400 shadow-sm' : 'text-slate-800'} />
+                                                    <Zap size={12} className={dev.status === 'active' ? 'text-amber-500' : 'text-slate-300'} />
                                                 </div>
                                                 <div className="h-16 relative z-10">
                                                     <ResponsiveContainer width="100%" height="100%">
@@ -509,16 +506,16 @@ const Devices = () => {
                                                         </LineChart>
                                                     </ResponsiveContainer>
                                                 </div>
-                                                <div className="mt-3 font-mono text-[9px] text-emerald-400/80 truncate font-bold bg-slate-900/80 p-2 rounded-lg border border-slate-800/30">
+                                                <div className="mt-3 font-mono text-[9px] text-emerald-600 truncate font-bold bg-white p-2 rounded-lg border border-slate-100">
                                                     {dev.status === 'active' ? (dev.last_payload || 'LINK_STABLE...') : 'NODE_INACTIVE'}
                                                 </div>
                                             </div>
 
                                             <div className="mt-6 flex items-center justify-between">
-                                                <span className="text-[9px] font-black uppercase text-slate-600 tracking-widest font-mono">{dev.id}</span>
+                                                <span className="text-[9px] font-black uppercase text-slate-400 tracking-widest font-mono">{dev.id}</span>
                                                 <div className={`px-3 py-1 rounded-lg text-[9px] font-black uppercase tracking-widest border ${
-                                                    dev.type === 'Sensor' ? 'bg-blue-500/10 text-blue-400 border-blue-500/20' : 
-                                                    dev.type === 'Camera' ? 'bg-purple-500/10 text-purple-400 border-purple-500/20' : 'bg-slate-800 text-slate-500 border-slate-700'
+                                                    dev.type === 'Sensor' ? 'bg-blue-50 text-blue-500 border-blue-200' : 
+                                                    dev.type === 'Camera' ? 'bg-purple-50 text-purple-500 border-purple-200' : 'bg-slate-50 text-slate-500 border-slate-200'
                                                 }`}>
                                                     {dev.type}
                                                 </div>
@@ -536,26 +533,25 @@ const Devices = () => {
 
         {/* Pagination Controls */}
         {gateways.length > 0 && (
-            <div className="flex flex-col md:flex-row items-center justify-between gap-6 bg-slate-900/40 p-8 rounded-[2.5rem] border border-slate-800/50 backdrop-blur-md shadow-2xl">
-                <div className="text-[10px] font-black text-slate-500 uppercase tracking-[0.3em]">
-                    Showing Gateways <span className="text-white">{(currentPage-1)*itemsPerPage + 1} - {Math.min(currentPage*itemsPerPage, gateways.length)}</span> of <span className="text-white">{gateways.length}</span>
+            <div className="flex flex-col md:flex-row items-center justify-between gap-6 bg-white p-8 rounded-[2.5rem] border border-slate-200 shadow-sm">
+                <div className="text-[10px] font-black text-slate-400 uppercase tracking-[0.3em]">
+                    Showing Gateways <span className="text-slate-800">{(currentPage-1)*itemsPerPage + 1} - {Math.min(currentPage*itemsPerPage, gateways.length)}</span> of <span className="text-slate-800">{gateways.length}</span>
                 </div>
                 
                 <div className="flex items-center gap-3">
                     <button 
                         disabled={currentPage === 1}
                         onClick={() => setCurrentPage(prev => Math.max(1, prev - 1))}
-                        className="p-4 bg-slate-950 border border-slate-800 rounded-2xl text-slate-400 hover:text-white disabled:opacity-20 disabled:cursor-not-allowed transition-all hover:border-purple-500/50 group"
+                        className="p-4 bg-white border border-slate-200 rounded-2xl text-slate-400 hover:text-slate-700 disabled:opacity-20 disabled:cursor-not-allowed transition-all hover:border-purple-300 group"
                     >
                         <ChevronLeft size={20} className="group-hover:-translate-x-0.5 transition-transform" />
                     </button>
                     
                     <div className="flex items-center gap-2 px-2">
                         {Array.from({ length: totalPages }, (_, i) => i + 1).map(page => {
-                            // Show limited page numbers if there are too many
                             if (totalPages > 7) {
                                 if (page !== 1 && page !== totalPages && Math.abs(page - currentPage) > 1) {
-                                    if (Math.abs(page - currentPage) === 2) return <span key={page} className="text-slate-700">...</span>;
+                                    if (Math.abs(page - currentPage) === 2) return <span key={page} className="text-slate-300">...</span>;
                                     return null;
                                 }
                             }
@@ -565,8 +561,8 @@ const Devices = () => {
                                     onClick={() => setCurrentPage(page)}
                                     className={`w-12 h-12 rounded-2xl text-xs font-black transition-all ${
                                         currentPage === page 
-                                        ? 'bg-purple-600 text-white shadow-[0_0_25px_rgba(168,85,247,0.4)]' 
-                                        : 'bg-slate-950/50 text-slate-500 hover:text-white border border-slate-800/50 hover:bg-slate-900'
+                                        ? 'bg-purple-600 text-white shadow-lg shadow-purple-200' 
+                                        : 'bg-white text-slate-400 hover:text-slate-700 border border-slate-200 hover:bg-slate-50'
                                     }`}
                                 >
                                     {page}
@@ -578,7 +574,7 @@ const Devices = () => {
                     <button 
                         disabled={currentPage === totalPages}
                         onClick={() => setCurrentPage(prev => Math.min(totalPages, prev + 1))}
-                        className="p-4 bg-slate-950 border border-slate-800 rounded-2xl text-slate-400 hover:text-white disabled:opacity-20 disabled:cursor-not-allowed transition-all hover:border-purple-500/50 group"
+                        className="p-4 bg-white border border-slate-200 rounded-2xl text-slate-400 hover:text-slate-700 disabled:opacity-20 disabled:cursor-not-allowed transition-all hover:border-purple-300 group"
                     >
                         <ChevronRight size={20} className="group-hover:translate-x-0.5 transition-transform" />
                     </button>
@@ -593,26 +589,26 @@ const Devices = () => {
                     <motion.div 
                         initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
                         onClick={() => setSelectedDeviceMetadata(null)}
-                        className="absolute inset-0 bg-slate-950/80 backdrop-blur-md"
+                        className="absolute inset-0 bg-black/20 backdrop-blur-sm"
                     />
                     <motion.div 
                         initial={{ x: '100%' }} animate={{ x: 0 }} exit={{ x: '100%' }}
                         transition={{ type: 'spring', damping: 25, stiffness: 200 }}
-                        className="relative w-full max-w-xl bg-[#0a0c1a] border-l border-slate-800 shadow-[-50px_0_100px_rgba(0,0,0,0.5)] h-full flex flex-col overflow-hidden"
+                        className="relative w-full max-w-xl bg-white border-l border-slate-200 shadow-2xl h-full flex flex-col overflow-hidden"
                     >
-                        <div className="absolute top-0 right-0 w-96 h-96 bg-purple-600/5 blur-[100px] rounded-full -mr-32 -mt-32" />
+                        <div className="absolute top-0 right-0 w-96 h-96 bg-purple-100/30 blur-[100px] rounded-full -mr-32 -mt-32" />
                         
-                        <div className="p-10 border-b border-slate-800/50 flex items-center justify-between bg-slate-900/20 relative z-10">
+                        <div className="p-10 border-b border-slate-200 flex items-center justify-between bg-slate-50 relative z-10">
                             <div className="flex items-center gap-6">
-                                <div className="p-4 bg-purple-500/10 rounded-2xl border border-purple-500/20">
-                                    <Database size={32} className="text-purple-400" />
+                                <div className="p-4 bg-purple-100 rounded-2xl border border-purple-200">
+                                    <Database size={32} className="text-purple-600" />
                                 </div>
                                 <div>
-                                    <h3 className="text-2xl font-black text-white tracking-tight">System Configuration</h3>
-                                    <p className="text-xs text-slate-500 font-mono font-bold uppercase tracking-[0.2em] mt-1">{selectedDeviceMetadata.id}</p>
+                                    <h3 className="text-2xl font-black text-slate-900 tracking-tight">System Configuration</h3>
+                                    <p className="text-xs text-slate-400 font-mono font-bold uppercase tracking-[0.2em] mt-1">{selectedDeviceMetadata.id}</p>
                                 </div>
                             </div>
-                            <button onClick={() => setSelectedDeviceMetadata(null)} className="p-3 bg-slate-800/50 hover:bg-slate-800 text-slate-400 hover:text-white rounded-full transition-all"><X size={24}/></button>
+                            <button onClick={() => setSelectedDeviceMetadata(null)} className="p-3 bg-slate-100 hover:bg-slate-200 text-slate-400 hover:text-slate-700 rounded-full transition-all"><X size={24}/></button>
                         </div>
                         
                         <div className="flex-1 overflow-y-auto p-10 space-y-12 relative z-10 custom-scrollbar">
@@ -626,7 +622,7 @@ const Devices = () => {
                                         const dbKey = key.toLowerCase().replace(' ', '_');
                                         return (
                                             <div key={key} className="space-y-3">
-                                                <label className="text-xs font-black text-slate-500 uppercase tracking-widest ml-1">{key}</label>
+                                                <label className="text-xs font-black text-slate-400 uppercase tracking-widest ml-1">{key}</label>
                                                 <input 
                                                     type="text" 
                                                     value={selectedDeviceMetadata.metadata?.[dbKey] || ''}
@@ -634,7 +630,7 @@ const Devices = () => {
                                                         ...selectedDeviceMetadata, 
                                                         metadata: { ...selectedDeviceMetadata.metadata, [dbKey]: e.target.value }
                                                     })}
-                                                    className="w-full px-6 py-4 bg-slate-900/50 border border-slate-800 rounded-2xl text-slate-300 text-sm focus:border-purple-500/50 outline-none transition-all focus:ring-4 focus:ring-purple-500/5"
+                                                    className="w-full px-6 py-4 bg-slate-50 border border-slate-200 rounded-2xl text-slate-700 text-sm focus:border-purple-400 outline-none transition-all focus:ring-4 focus:ring-purple-50"
                                                     placeholder={`Enter ${key.toLowerCase()}...`}
                                                 />
                                             </div>
@@ -648,7 +644,7 @@ const Devices = () => {
                                     <div className="w-2 h-2 rounded-full bg-amber-500" />
                                     Simulation Logic State
                                 </h4>
-                                <div className="p-8 bg-slate-950 rounded-[2rem] border border-slate-800 shadow-inner">
+                                <div className="p-8 bg-slate-900 rounded-[2rem] border border-slate-800 shadow-inner">
                                     <pre className="font-mono text-[12px] text-emerald-400 break-all leading-relaxed whitespace-pre-wrap">
                                         {JSON.stringify(selectedDeviceMetadata.metadata || {}, null, 2)}
                                     </pre>
@@ -656,10 +652,10 @@ const Devices = () => {
                             </section>
                         </div>
 
-                        <div className="p-10 bg-slate-900/30 border-t border-slate-800 relative z-10">
+                        <div className="p-10 bg-slate-50 border-t border-slate-200 relative z-10">
                             <button 
                                 onClick={() => updateMetadata(selectedDeviceMetadata.id, selectedDeviceMetadata.metadata)}
-                                className="w-full bg-white text-black py-5 rounded-2xl font-black text-sm hover:bg-slate-200 transition-all shadow-[0_0_30px_rgba(255,255,255,0.1)] active:scale-[0.98] uppercase tracking-widest"
+                                className="w-full bg-purple-600 text-white py-5 rounded-2xl font-black text-sm hover:bg-purple-500 transition-all shadow-lg shadow-purple-200 active:scale-[0.98] uppercase tracking-widest"
                             >
                                 Overwrite System Registry
                             </button>
@@ -677,7 +673,7 @@ const Devices = () => {
                     animate={{ height: 'auto', opacity: 1, y: 0 }}
                     exit={{ height: 0, opacity: 0, y: 50 }}
                     transition={{ type: 'spring', damping: 30, stiffness: 200 }}
-                    className="bg-slate-950/90 rounded-[3rem] border border-slate-800 shadow-[0_50px_100px_rgba(0,0,0,0.8)] overflow-hidden mt-16 backdrop-blur-2xl relative"
+                    className="bg-slate-900 rounded-[3rem] border border-slate-800 shadow-2xl overflow-hidden mt-16 relative"
                 >
                     <div className="absolute inset-0 bg-gradient-to-b from-purple-500/[0.03] to-transparent pointer-events-none" />
                     

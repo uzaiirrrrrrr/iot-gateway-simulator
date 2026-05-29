@@ -146,3 +146,106 @@ exports.logoutAll = async (req, res) => {
         res.status(500).json({ message: 'Server error' });
     }
 };
+
+exports.forgotPassword = async (req, res) => {
+  const { email } = req.body;
+
+  if (!email) {
+    return res.status(400).json({ message: 'Email is required.' });
+  }
+
+  if (!validateEmail(email)) {
+    return res.status(400).json({ message: 'Invalid email format.' });
+  }
+
+  try {
+    const userResult = await db.query('SELECT id, email FROM users WHERE email = $1', [email]);
+    if (userResult.rows.length === 0) {
+      return res.status(404).json({ message: 'Security identity not registered in Nexus registry.' });
+    }
+
+    const user = userResult.rows[0];
+
+    // Generate a secure 6-digit OTP
+    const otp = Math.floor(100000 + Math.random() * 900000).toString();
+    const expiresAt = new Date(Date.now() + 15 * 60 * 1000); // 15 minutes
+
+    await db.query(
+      'UPDATE users SET reset_token = $1, reset_token_expires = $2 WHERE id = $3',
+      [otp, expiresAt, user.id]
+    );
+
+    // Audit log
+    await db.query(
+      `INSERT INTO audit_logs (user_id, action, details, ip_address) VALUES ($1, $2, $3, $4)`,
+      [user.id, 'PASSWORD_RESET_REQUESTED', `Secure OTP generated for ${user.email}`, req.ip]
+    );
+
+    console.log(`\n=============================================`);
+    console.log(`[SECURE DECRYPTION KEY TRANSMISSION]`);
+    console.log(`To: ${user.email}`);
+    console.log(`OTP Verification Key: ${otp}`);
+    console.log(`Expires: ${expiresAt.toLocaleString()}`);
+    console.log(`=============================================\n`);
+
+    // In simulation mode, we return the OTP to allow immediate in-browser recovery
+    res.json({
+      message: 'Secure transmission simulated. Security recovery code sent.',
+      simulationOtp: otp, // For frontend preview inbox
+      email: user.email
+    });
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ message: 'Server error during recovery.' });
+  }
+};
+
+exports.resetPassword = async (req, res) => {
+  const { email, otp, newPassword } = req.body;
+
+  if (!email || !otp || !newPassword) {
+    return res.status(400).json({ message: 'Email, OTP token, and new password are required.' });
+  }
+
+  if (!validatePassword(newPassword)) {
+    return res.status(400).json({ message: 'Password must be 8+ characters and contain a number.' });
+  }
+
+  try {
+    const userResult = await db.query('SELECT * FROM users WHERE email = $1', [email]);
+    if (userResult.rows.length === 0) {
+      return res.status(400).json({ message: 'Invalid identity or recovery key.' });
+    }
+
+    const user = userResult.rows[0];
+
+    if (!user.reset_token || user.reset_token !== otp) {
+      return res.status(400).json({ message: 'Invalid or incorrect OTP verification key.' });
+    }
+
+    const expiresAt = new Date(user.reset_token_expires);
+    if (expiresAt < new Date()) {
+      return res.status(400).json({ message: 'OTP verification key has expired (15-min limit exceeded).' });
+    }
+
+    // Update password
+    const saltRounds = 10;
+    const passwordHash = await bcrypt.hash(newPassword, saltRounds);
+
+    await db.query(
+      'UPDATE users SET password_hash = $1, reset_token = NULL, reset_token_expires = NULL WHERE id = $2',
+      [passwordHash, user.id]
+    );
+
+    // Audit log
+    await db.query(
+      `INSERT INTO audit_logs (user_id, action, details, ip_address) VALUES ($1, $2, $3, $4)`,
+      [user.id, 'PASSWORD_RESET_SUCCESSFUL', `Password updated successfully for ${user.email}`, req.ip]
+    );
+
+    res.json({ message: 'Security key updated successfully. Node connection re-established.' });
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ message: 'Server error during key reset.' });
+  }
+};

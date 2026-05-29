@@ -24,31 +24,31 @@ const Login = () => {
   };
 
   return (
-    <div className="flex min-h-screen bg-[#020617] overflow-hidden font-outfit">
+    <div className="flex min-h-screen bg-slate-50 overflow-hidden font-outfit">
       {/* Left Side: Design & Visuals (Desktop only) */}
       <motion.div 
         initial={{ x: -100, opacity: 0 }}
         animate={{ x: 0, opacity: 1 }}
         transition={{ duration: 1, ease: [0.22, 1, 0.36, 1] }}
-        className="hidden lg:flex lg:w-1/2 relative flex-col justify-center items-center p-12 bg-[#0a0c1a]"
+        className="hidden lg:flex lg:w-1/2 relative flex-col justify-center items-center p-12 bg-slate-900 text-white"
       >
         <div className="absolute inset-0">
           <img 
             src="/images/login-bg.png" 
             alt="IoT Background" 
-            className="w-full h-full object-cover opacity-60"
+            className="w-full h-full object-cover opacity-30"
           />
-          <div className="absolute inset-0 bg-gradient-to-tr from-[#020617] via-[#020617]/40 to-transparent"></div>
+          <div className="absolute inset-0 bg-gradient-to-tr from-slate-950 via-slate-900/60 to-transparent"></div>
           {/* Animated Glow Orbs */}
           <motion.div 
-            animate={{ scale: [1, 1.2, 1], opacity: [0.3, 0.5, 0.3] }}
+            animate={{ scale: [1, 1.2, 1], opacity: [0.2, 0.4, 0.2] }}
             transition={{ duration: 8, repeat: Infinity }}
-            className="absolute top-1/4 left-1/4 w-64 h-64 bg-purple-600/30 blur-[120px] rounded-full"
+            className="absolute top-1/4 left-1/4 w-64 h-64 bg-purple-600/20 blur-[120px] rounded-full"
           />
           <motion.div 
-            animate={{ scale: [1.2, 1, 1.2], opacity: [0.2, 0.4, 0.2] }}
+            animate={{ scale: [1.2, 1, 1.2], opacity: [0.1, 0.3, 0.1] }}
             transition={{ duration: 10, repeat: Infinity, delay: 1 }}
-            className="absolute bottom-1/4 right-1/4 w-96 h-96 bg-blue-600/20 blur-[150px] rounded-full"
+            className="absolute bottom-1/4 right-1/4 w-96 h-96 bg-blue-600/10 blur-[150px] rounded-full"
           />
         </div>
         
@@ -77,7 +77,7 @@ const Login = () => {
             initial={{ y: 20, opacity: 0 }}
             animate={{ y: 0, opacity: 1 }}
             transition={{ delay: 0.7 }}
-            className="text-xl text-slate-400 max-w-md mx-auto leading-relaxed font-light"
+            className="text-xl text-slate-300 max-w-md mx-auto leading-relaxed font-light"
           >
             Step into the future of secure gateway management. 
             High-fidelity simulation for critical infrastructure.
@@ -93,13 +93,13 @@ const Login = () => {
               <div className="w-12 h-12 rounded-xl bg-white/5 flex items-center justify-center border border-white/10">
                 <ShieldCheck className="text-purple-400" size={24} />
               </div>
-              <span className="text-xs font-bold uppercase tracking-widest text-slate-500">Secure</span>
+              <span className="text-xs font-bold uppercase tracking-widest text-slate-400">Secure</span>
             </div>
             <div className="flex flex-col items-center gap-2">
               <div className="w-12 h-12 rounded-xl bg-white/5 flex items-center justify-center border border-white/10">
                 <Activity className="text-fuchsia-400" size={24} />
               </div>
-              <span className="text-xs font-bold uppercase tracking-widest text-slate-500">Live</span>
+              <span className="text-xs font-bold uppercase tracking-widest text-slate-400">Live</span>
             </div>
           </motion.div>
         </div>
@@ -110,9 +110,9 @@ const Login = () => {
         initial={{ opacity: 0 }}
         animate={{ opacity: 1 }}
         transition={{ duration: 0.8 }}
-        className="w-full lg:w-1/2 flex items-center justify-center p-8 bg-[#020617] relative"
+        className="w-full lg:w-1/2 flex items-center justify-center p-8 bg-white relative"
       >
-        <div className="absolute top-0 right-0 p-12 opacity-10 pointer-events-none">
+        <div className="absolute top-0 right-0 p-12 opacity-[0.02] pointer-events-none">
             <Activity size={300} className="text-purple-600" />
         </div>
 
@@ -121,18 +121,18 @@ const Login = () => {
             <motion.h2 
               initial={{ x: 20, opacity: 0 }}
               animate={{ x: 0, opacity: 1 }}
-              className="text-4xl font-bold text-white mb-3"
+              className="text-4xl font-bold text-slate-900 mb-3"
             >
               Access Portal
             </motion.h2>
-            <p className="text-slate-500 text-lg">Enter credentials to establish connection</p>
+            <p className="text-slate-400 text-lg font-medium">Enter credentials to establish connection</p>
           </div>
 
           {error && (
             <motion.div 
               initial={{ scale: 0.9, opacity: 0 }}
               animate={{ scale: 1, opacity: 1 }}
-              className="bg-red-500/10 border border-red-500/20 text-red-400 px-5 py-4 rounded-2xl mb-8 text-sm flex items-center gap-4 backdrop-blur-md"
+              className="bg-red-50 border border-red-200 text-red-600 px-5 py-4 rounded-2xl mb-8 text-sm flex items-center gap-4 backdrop-blur-md"
             >
               <div className="w-2 h-2 rounded-full bg-red-500 shadow-[0_0_10px_rgba(239,68,68,0.5)] animate-pulse" />
               {error}
@@ -141,44 +141,44 @@ const Login = () => {
 
           <form onSubmit={handleSubmit} className="space-y-7">
             <div className="group">
-              <label className="block text-xs font-bold text-slate-500 uppercase tracking-widest mb-3 transition-colors group-focus-within:text-purple-400">
+              <label className="block text-xs font-bold text-slate-500 uppercase tracking-widest mb-3 transition-colors group-focus-within:text-purple-600">
                 Email Identity
               </label>
               <div className="relative">
                 <div className="absolute inset-y-0 left-0 pl-5 flex items-center pointer-events-none">
-                  <Mail size={18} className="text-slate-600 group-focus-within:text-purple-400 transition-colors" />
+                  <Mail size={18} className="text-slate-400 group-focus-within:text-purple-600 transition-colors" />
                 </div>
                 <input
                   type="email"
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
                   placeholder="operator@gmail.com"
-                  className="w-full bg-slate-900/50 border border-slate-800 text-white rounded-2xl pl-14 px-5 py-4 outline-none focus:border-purple-500/50 transition-all focus:ring-4 focus:ring-purple-500/5 hover:border-slate-700"
+                  className="w-full bg-slate-50 border border-slate-200 text-slate-800 rounded-2xl pl-14 px-5 py-4 outline-none focus:border-purple-400 transition-all focus:ring-4 focus:ring-purple-100 hover:border-slate-300"
                   required
                 />
               </div>
             </div>
 
             <div className="group">
-              <label className="block text-xs font-bold text-slate-500 uppercase tracking-widest mb-3 transition-colors group-focus-within:text-purple-400">
+              <label className="block text-xs font-bold text-slate-500 uppercase tracking-widest mb-3 transition-colors group-focus-within:text-purple-600">
                 Security Key
               </label>
               <div className="relative">
                 <div className="absolute inset-y-0 left-0 pl-5 flex items-center pointer-events-none">
-                  <Lock size={18} className="text-slate-600 group-focus-within:text-purple-400 transition-colors" />
+                  <Lock size={18} className="text-slate-400 group-focus-within:text-purple-600 transition-colors" />
                 </div>
                 <input
                   type="password"
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
                   placeholder="••••••••"
-                  className="w-full bg-slate-900/50 border border-slate-800 text-white rounded-2xl pl-14 px-5 py-4 outline-none focus:border-purple-500/50 transition-all focus:ring-4 focus:ring-purple-500/5 hover:border-slate-700"
+                  className="w-full bg-slate-50 border border-slate-200 text-slate-800 rounded-2xl pl-14 px-5 py-4 outline-none focus:border-purple-400 transition-all focus:ring-4 focus:ring-purple-100 hover:border-slate-300"
                   required
                 />
               </div>
             </div>
 
-            <div className="flex items-center">
+            <div className="flex items-center justify-between">
               <label className="flex items-center gap-3 cursor-pointer group">
                 <div className="relative">
                   <input
@@ -187,31 +187,35 @@ const Login = () => {
                     onChange={(e) => setRememberMe(e.target.checked)}
                     className="peer sr-only"
                   />
-                  <div className="w-5 h-5 border-2 border-slate-700 rounded-lg bg-transparent peer-checked:bg-purple-600 peer-checked:border-purple-600 transition-all shadow-[0_0_10px_rgba(124,58,237,0)] peer-checked:shadow-[0_0_15px_rgba(124,58,237,0.4)]"></div>
+                  <div className="w-5 h-5 border-2 border-slate-300 rounded-lg bg-transparent peer-checked:bg-purple-600 peer-checked:border-purple-600 transition-all shadow-[0_0_10px_rgba(124,58,237,0)] peer-checked:shadow-[0_0_15px_rgba(124,58,237,0.2)]"></div>
                   <div className="absolute inset-0 flex items-center justify-center text-white opacity-0 peer-checked:opacity-100 transition-opacity">
                     <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="4" d="M5 13l4 4L19 7" />
                     </svg>
                   </div>
                 </div>
-                <span className="text-sm text-slate-500 group-hover:text-slate-300 transition-colors">Remember Me</span>
+                <span className="text-sm text-slate-500 group-hover:text-slate-800 transition-colors font-semibold">Remember Me</span>
               </label>
+              
+              <Link to="/forgot-password" className="text-sm text-purple-600 hover:text-purple-500 font-bold transition-all hover:underline tracking-tight">
+                Forgot Security Key?
+              </Link>
             </div>
 
             <motion.button
-              whileHover={{ scale: 1.02, boxShadow: "0 0 25px rgba(124, 58, 237, 0.3)" }}
+              whileHover={{ scale: 1.02, boxShadow: "0 0 25px rgba(124, 58, 237, 0.2)" }}
               whileTap={{ scale: 0.98 }}
               type="submit"
-              className="w-full bg-purple-600 hover:bg-purple-500 text-white font-bold py-5 rounded-2xl shadow-xl shadow-purple-900/20 transition-all flex items-center justify-center gap-4 group"
+              className="w-full bg-purple-600 hover:bg-purple-500 text-white font-bold py-5 rounded-2xl shadow-lg shadow-purple-200 transition-all flex items-center justify-center gap-4 group"
             >
               <span>Initialize Connection</span>
               <Activity size={20} className="group-hover:animate-pulse" />
             </motion.button>
           </form>
 
-          <div className="mt-12 text-center text-sm text-slate-500">
+          <div className="mt-12 text-center text-sm text-slate-400 font-semibold">
             Unauthorized?{' '}
-            <Link to="/register" className="text-purple-400 hover:text-purple-300 transition-colors font-bold tracking-tight">
+            <Link to="/register" className="text-purple-600 hover:text-purple-500 transition-colors font-bold tracking-tight">
               REGISTER NEW NODE
             </Link>
           </div>

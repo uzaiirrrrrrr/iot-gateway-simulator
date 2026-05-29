@@ -38,7 +38,7 @@ const Layout = () => {
   );
 
   return (
-    <div className="flex h-screen bg-[#020617] overflow-hidden font-outfit">
+    <div className="flex h-screen bg-slate-100 overflow-hidden font-outfit">
       {/* Sidebar */}
       <div className="w-64 bg-[#0a0c1a] text-white flex flex-col flex-shrink-0 border-r border-slate-800/50">
         <div className="p-6 text-xl font-bold border-b border-slate-800/50 flex items-center gap-3">
@@ -112,30 +112,30 @@ const Layout = () => {
       </div>
 
       {/* Main Content */}
-      <div className="flex-1 overflow-hidden bg-[#020617] flex flex-col relative">
+      <div className="flex-1 overflow-hidden bg-slate-50 flex flex-col relative">
         {/* Abstract Background Elements */}
-        <div className="absolute top-0 right-0 w-[500px] h-[500px] bg-purple-600/5 blur-[120px] rounded-full -mr-64 -mt-64 pointer-events-none" />
-        <div className="absolute bottom-0 left-0 w-[400px] h-[400px] bg-blue-600/5 blur-[100px] rounded-full -ml-32 -mb-32 pointer-events-none" />
+        <div className="absolute top-0 right-0 w-[500px] h-[500px] bg-purple-200/20 blur-[120px] rounded-full -mr-64 -mt-64 pointer-events-none" />
+        <div className="absolute bottom-0 left-0 w-[400px] h-[400px] bg-blue-200/20 blur-[100px] rounded-full -ml-32 -mb-32 pointer-events-none" />
 
-        <header className="h-20 min-h-[5rem] flex items-center px-10 z-10 justify-between border-b border-slate-800/30 backdrop-blur-md bg-[#020617]/80">
+        <header className="h-20 min-h-[5rem] flex items-center px-10 z-10 justify-between border-b border-slate-200 backdrop-blur-md bg-white/80">
           <div className="flex items-center gap-4">
-             <div className="p-2.5 bg-slate-900 border border-slate-800 rounded-xl text-purple-400 shadow-inner">
+             <div className="p-2.5 bg-purple-50 border border-purple-200 rounded-xl text-purple-600 shadow-sm">
                 {navItems.find(i => i.path === location.pathname)?.icon || <Activity size={20} />}
              </div>
              <div>
-               <h1 className="text-2xl font-black text-white tracking-tight">
+               <h1 className="text-2xl font-black text-slate-900 tracking-tight">
                   {navItems.find(i => i.path === location.pathname)?.name || 'Platform'}
                </h1>
-               <div className="text-[10px] text-slate-500 font-bold uppercase tracking-widest mt-0.5">Control Center / {location.pathname.replace('/', '')}</div>
+               <div className="text-[10px] text-slate-400 font-bold uppercase tracking-widest mt-0.5">Control Center / {location.pathname.replace('/', '')}</div>
              </div>
           </div>
           <div className="flex items-center gap-6">
               <div className="flex flex-col items-end">
                 <div className="flex items-center gap-2">
                   <div className="h-1.5 w-1.5 rounded-full bg-emerald-500 shadow-[0_0_8px_#10b981] animate-pulse"></div>
-                  <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Core Synchronized</span>
+                  <span className="text-[10px] font-black text-slate-500 uppercase tracking-widest">Core Synchronized</span>
                 </div>
-                <div className="text-[9px] text-slate-600 font-mono mt-1 uppercase tracking-tighter">Latency: 14ms</div>
+                <div className="text-[9px] text-slate-400 font-mono mt-1 uppercase tracking-tighter">Latency: 14ms</div>
               </div>
           </div>
         </header>

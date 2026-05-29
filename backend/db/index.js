@@ -14,7 +14,19 @@ pool.on('error', (err, client) => {
   process.exit(-1);
 });
 
+// Run automatic schema migrations for security recovery
+pool.query(`
+  ALTER TABLE users 
+  ADD COLUMN IF NOT EXISTS reset_token VARCHAR(255),
+  ADD COLUMN IF NOT EXISTS reset_token_expires TIMESTAMP;
+`).then(() => {
+  console.log('Database auto-migrations executed successfully. Security recovery columns verified.');
+}).catch(err => {
+  console.error('Failed to run schema auto-migrations for password resets:', err.message);
+});
+
 module.exports = {
   query: (text, params) => pool.query(text, params),
   pool,
 };
+
