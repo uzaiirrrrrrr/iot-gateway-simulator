@@ -1,6 +1,19 @@
 const bcrypt = require('bcrypt');
 const jwt = require('jsonwebtoken');
+const crypto = require('node:crypto');
+const nodemailer = require('nodemailer');
 const db = require('../db');
+
+// Nodemailer Transporter Setup for REAL Email Delivery
+const createTransporter = () => {
+  return nodemailer.createTransport({
+    service: 'gmail', // You can change this if using Outlook/Yahoo
+    auth: {
+      user: process.env.EMAIL_USER, // e.g. your-email@gmail.com
+      pass: process.env.EMAIL_PASS, // e.g. your 16-digit App Password
+    },
+  });
+};
 
 // Validation Helpers
 const validateEmail = (email) => {
@@ -214,32 +227,60 @@ exports.forgotPassword = async (req, res) => {
 
     const user = userResult.rows[0];
 
-    // Generate a secure 6-digit OTP
-    const otp = Math.floor(100000 + Math.random() * 900000).toString();
+    // Generate a secure 64-char hex token for the URL
+    const resetToken = crypto.randomBytes(32).toString('hex');
     const expiresAt = new Date(Date.now() + 15 * 60 * 1000); // 15 minutes
 
     await db.query(
       'UPDATE users SET reset_token = $1, reset_token_expires = $2 WHERE id = $3',
-      [otp, expiresAt, user.id]
+      [resetToken, expiresAt, user.id]
     );
 
     // Audit log
     await db.query(
       `INSERT INTO audit_logs (user_id, action, details, ip_address) VALUES ($1, $2, $3, $4)`,
-      [user.id, 'PASSWORD_RESET_REQUESTED', `Secure OTP generated for ${user.email}`, req.ip]
+      [user.id, 'PASSWORD_RESET_REQUESTED', `Secure email recovery link generated for ${user.email}`, req.ip]
     );
 
+    // Send Real Email using Nodemailer
+    if (!process.env.EMAIL_USER || !process.env.EMAIL_PASS) {
+      return res.status(500).json({ 
+        message: 'Server Configuration Error: To send real emails, you MUST add EMAIL_USER and EMAIL_PASS to your backend/.env file and restart the server!' 
+      });
+    }
+
+    const transporter = createTransporter();
+    const resetUrl = `http://localhost:5173/reset-password?token=${resetToken}&email=${encodeURIComponent(user.email)}`;
+
+    const mailOptions = {
+      from: `"IoT Gateway Security" <${process.env.EMAIL_USER}>`,
+      to: user.email,
+      subject: "Action Required: Reset Your Security Key",
+      html: `
+        <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px; border: 1px solid #e2e8f0; border-radius: 10px;">
+          <h2 style="color: #0f9d58;">IoT Gateway Simulator — Password Reset Request</h2>
+          <p>You requested a password reset. Click the button below to set a new password. This link will expire in 15 minutes.</p>
+          <div style="text-align: center; margin: 30px 0;">
+            <a href="${resetUrl}" style="background-color: #0f9d58; color: white; padding: 12px 24px; text-decoration: none; border-radius: 6px; font-weight: bold; display: inline-block;">Reset My Password</a>
+          </div>
+          <p style="color: #64748b; font-size: 12px;">If you didn't request this, you can safely ignore this email. Your password will remain unchanged.</p>
+          <p style="color: #64748b; font-size: 10px; border-top: 1px solid #eee; padding-top: 10px; margin-top: 20px; text-align: center;">
+            © 2026 IoT Gateway Simulator.
+          </p>
+        </div>
+      `,
+    };
+
+    const info = await transporter.sendMail(mailOptions);
+
     console.log(`\n=============================================`);
-    console.log(`[SECURE DECRYPTION KEY TRANSMISSION]`);
+    console.log(`[REAL EMAIL TRANSMISSION]`);
     console.log(`To: ${user.email}`);
-    console.log(`OTP Verification Key: ${otp}`);
-    console.log(`Expires: ${expiresAt.toLocaleString()}`);
+    console.log(`Status: Successfully Dispatched to SMTP Provider`);
     console.log(`=============================================\n`);
 
-    // In simulation mode, we return the OTP to allow immediate in-browser recovery
     res.json({
-      message: 'Secure transmission simulated. Security recovery code sent.',
-      simulationOtp: otp, // For frontend preview inbox
+      message: 'If an account matches, a recovery link has been dispatched to your actual inbox.',
       email: user.email
     });
   } catch (error) {
@@ -249,10 +290,10 @@ exports.forgotPassword = async (req, res) => {
 };
 
 exports.resetPassword = async (req, res) => {
-  const { email, otp, newPassword } = req.body;
+  const { email, token, newPassword } = req.body;
 
-  if (!email || !otp || !newPassword) {
-    return res.status(400).json({ message: 'Email, OTP token, and new password are required.' });
+  if (!email || !token || !newPassword) {
+    return res.status(400).json({ message: 'Email, secure token, and new password are required.' });
   }
 
   if (!validatePassword(newPassword)) {
@@ -262,18 +303,18 @@ exports.resetPassword = async (req, res) => {
   try {
     const userResult = await db.query('SELECT * FROM users WHERE email = $1', [email]);
     if (userResult.rows.length === 0) {
-      return res.status(400).json({ message: 'Invalid identity or recovery key.' });
+      return res.status(400).json({ message: 'Invalid identity or recovery link.' });
     }
 
     const user = userResult.rows[0];
 
-    if (!user.reset_token || user.reset_token !== otp) {
-      return res.status(400).json({ message: 'Invalid or incorrect OTP verification key.' });
+    if (!user.reset_token || user.reset_token !== token) {
+      return res.status(400).json({ message: 'Invalid or incorrect recovery token. It may have been used.' });
     }
 
     const expiresAt = new Date(user.reset_token_expires);
     if (expiresAt < new Date()) {
-      return res.status(400).json({ message: 'OTP verification key has expired (15-min limit exceeded).' });
+      return res.status(400).json({ message: 'Recovery link has expired (15-min limit exceeded).' });
     }
 
     // Update password
