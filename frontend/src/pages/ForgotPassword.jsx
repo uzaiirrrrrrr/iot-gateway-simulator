@@ -108,7 +108,7 @@ const ForgotPassword = () => {
           <div className="mb-10">
             <Link to="/login" className="inline-flex items-center gap-2 text-slate-400 hover:text-purple-600 font-bold transition-colors text-sm mb-6 group">
               <ArrowLeft size={16} className="group-hover:-translate-x-1 transition-transform" />
-              <span>Back to Access Portal</span>
+              <span>Back to Sign In</span>
             </Link>
             
             <motion.h2 
@@ -158,7 +158,7 @@ const ForgotPassword = () => {
             >
               <div className="group">
                 <label className="block text-xs font-bold text-slate-500 uppercase tracking-widest mb-3 group-focus-within:text-purple-600 transition-colors">
-                  Registered Email Identity
+                  Registered Email Address
                 </label>
                 <div className="relative">
                   <div className="absolute inset-y-0 left-0 pl-5 flex items-center pointer-events-none">

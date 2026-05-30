@@ -26,6 +26,7 @@ const Layout = () => {
   };
 
   const navItems = [
+    { name: 'Dashboard', path: '/dashboard', icon: <LayoutDashboard size={20} />, roles: ['Admin', 'User', 'Viewer'] },
     { name: 'Gateways', path: '/gateways', icon: <Server size={20} />, roles: ['Admin', 'User', 'Viewer'] },
     { name: 'Device Provision', path: '/devices', icon: <Cpu size={20} />, roles: ['Admin', 'User'] },
     { name: 'Security View', path: '/security', icon: <Shield size={20} />, roles: ['Admin', 'User', 'Viewer'] },

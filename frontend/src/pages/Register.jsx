@@ -120,7 +120,7 @@ const Register = () => {
       >
         <div className="max-w-md w-full relative">
           <div className="mb-10 text-center lg:text-left">
-            <h2 className="text-4xl font-bold text-slate-900 mb-3">Register Node</h2>
+            <h2 className="text-4xl font-bold text-slate-900 mb-3">Sign Up</h2>
             <p className="text-slate-400 text-lg font-medium">Join the unified simulator infrastructure</p>
           </div>
 
@@ -138,7 +138,7 @@ const Register = () => {
           <form onSubmit={handleSubmit} className="space-y-6">
             <div className="group">
               <label className="block text-xs font-bold text-slate-500 uppercase tracking-widest mb-3 transition-colors group-focus-within:text-purple-600">
-                Email Destination
+                Email Address
               </label>
               <div className="relative">
                 <div className="absolute inset-y-0 left-0 pl-5 flex items-center pointer-events-none">
@@ -162,7 +162,7 @@ const Register = () => {
 
             <div className="group">
               <label className="block text-xs font-bold text-slate-500 uppercase tracking-widest mb-3 transition-colors group-focus-within:text-purple-600">
-                Secret Cipher
+                Password
               </label>
               <div className="relative">
                 <div className="absolute inset-y-0 left-0 pl-5 flex items-center pointer-events-none">
@@ -230,7 +230,7 @@ const Register = () => {
                 <div className="w-6 h-6 border-3 border-white/20 border-t-white rounded-full animate-spin" />
               ) : (
                 <>
-                  <span>Initialize Account</span>
+                  <span>Sign Up</span>
                   <UserPlus size={20} />
                 </>
               )}
@@ -238,9 +238,9 @@ const Register = () => {
           </form>
 
           <div className="mt-10 text-center text-sm text-slate-400 font-semibold">
-            Already registered?{' '}
+            Already have an account?{' '}
             <Link to="/login" className="text-purple-600 hover:text-purple-500 transition-colors font-bold tracking-tight">
-              ESTABLISH CONNECTION
+              SIGN IN
             </Link>
           </div>
         </div>

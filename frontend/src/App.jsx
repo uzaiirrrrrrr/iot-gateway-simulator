@@ -10,6 +10,7 @@ import Devices from './pages/Devices';
 import SecurityVisualization from './pages/SecurityVisualization';
 import TrafficAnalytics from './pages/TrafficAnalytics';
 import CloudSimulation from './pages/CloudSimulation';
+import Dashboard from './pages/Dashboard';
 
 import Layout from './components/Layout';
 import PrivateRoute from './components/PrivateRoute';
@@ -24,7 +25,8 @@ function App() {
           <Route path="/forgot-password" element={<ForgotPassword />} />
           <Route path="/reset-password" element={<ResetPassword />} />
           <Route path="/" element={<PrivateRoute><Layout /></PrivateRoute>}>
-            <Route index element={<Navigate to="/gateways" replace />} />
+            <Route index element={<Navigate to="/dashboard" replace />} />
+            <Route path="dashboard" element={<Dashboard />} />
             <Route path="gateways" element={<Gateways />} />
             <Route path="devices" element={<Devices />} />
             <Route path="security" element={<SecurityVisualization />} />

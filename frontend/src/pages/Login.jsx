@@ -9,7 +9,7 @@ const Login = () => {
   const [password, setPassword] = useState('admin123');
   const [rememberMe, setRememberMe] = useState(false);
   const [error, setError] = useState('');
-  
+
   // OTP Challenge State
   const [showOtpChallenge, setShowOtpChallenge] = useState(false);
   const [otp, setOtp] = useState('');
@@ -23,7 +23,7 @@ const Login = () => {
     setError('');
     try {
       await login(email, password, rememberMe);
-      navigate('/gateways');
+      navigate('/dashboard');
     } catch (err) {
       if (err.response?.data?.status === 'device_verification_required') {
         setShowOtpChallenge(true);
@@ -40,7 +40,7 @@ const Login = () => {
     setIsVerifying(true);
     try {
       await verifyDevice(email, otp, rememberMe);
-      navigate('/gateways');
+      navigate('/dashboard');
     } catch (err) {
       setError(err.response?.data?.message || 'Device verification failed. Invalid code.');
     } finally {
@@ -51,35 +51,35 @@ const Login = () => {
   return (
     <div className="flex min-h-screen bg-slate-50 overflow-hidden font-outfit">
       {/* Left Side: Design & Visuals (Desktop only) */}
-      <motion.div 
+      <motion.div
         initial={{ x: -100, opacity: 0 }}
         animate={{ x: 0, opacity: 1 }}
         transition={{ duration: 1, ease: [0.22, 1, 0.36, 1] }}
         className="hidden lg:flex lg:w-1/2 relative flex-col justify-center items-center p-12 bg-slate-900 text-white"
       >
         <div className="absolute inset-0">
-          <img 
-            src="/images/login-bg.png" 
-            alt="IoT Background" 
+          <img
+            src="/images/login-bg.png"
+            alt="IoT Background"
             className="w-full h-full object-cover opacity-30"
           />
           <div className="absolute inset-0 bg-gradient-to-tr from-slate-950 via-slate-900/60 to-transparent"></div>
           {/* Animated Glow Orbs */}
-          <motion.div 
+          <motion.div
             animate={{ scale: [1, 1.2, 1], opacity: [0.2, 0.4, 0.2] }}
             transition={{ duration: 8, repeat: Infinity }}
             className="absolute top-1/4 left-1/4 w-64 h-64 bg-purple-600/20 blur-[120px] rounded-full"
           />
-          <motion.div 
+          <motion.div
             animate={{ scale: [1.2, 1, 1.2], opacity: [0.1, 0.3, 0.1] }}
             transition={{ duration: 10, repeat: Infinity, delay: 1 }}
             className="absolute bottom-1/4 right-1/4 w-96 h-96 bg-blue-600/10 blur-[150px] rounded-full"
           />
         </div>
-        
+
         <div className="relative z-10 text-center">
           <motion.div
-            animate={{ 
+            animate={{
               y: [0, -20, 0],
               rotate: [0, 5, -5, 0],
               filter: ["drop-shadow(0 0 0px #7c3aed)", "drop-shadow(0 0 20px #7c3aed)", "drop-shadow(0 0 0px #7c3aed)"]
@@ -89,7 +89,7 @@ const Login = () => {
           >
             <Cpu className="text-purple-400" size={56} />
           </motion.div>
-          <motion.h1 
+          <motion.h1
             initial={{ y: 20, opacity: 0 }}
             animate={{ y: 0, opacity: 1 }}
             transition={{ delay: 0.5 }}
@@ -98,17 +98,17 @@ const Login = () => {
             IoT Gateway <br />
             <span className="bg-gradient-to-r from-purple-400 to-fuchsia-400 bg-clip-text text-transparent">Simulator</span>
           </motion.h1>
-          <motion.p 
+          <motion.p
             initial={{ y: 20, opacity: 0 }}
             animate={{ y: 0, opacity: 1 }}
             transition={{ delay: 0.7 }}
             className="text-xl text-slate-300 max-w-md mx-auto leading-relaxed font-light"
           >
-            Step into the future of secure gateway management. 
+            Step into the future of secure gateway management.
             High-fidelity simulation for critical infrastructure.
           </motion.p>
-          
-          <motion.div 
+
+          <motion.div
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             transition={{ delay: 1 }}
@@ -131,30 +131,30 @@ const Login = () => {
       </motion.div>
 
       {/* Right Side: Credentials */}
-      <motion.div 
+      <motion.div
         initial={{ opacity: 0 }}
         animate={{ opacity: 1 }}
         transition={{ duration: 0.8 }}
         className="w-full lg:w-1/2 flex items-center justify-center p-8 bg-white relative"
       >
         <div className="absolute top-0 right-0 p-12 opacity-[0.02] pointer-events-none">
-            <Activity size={300} className="text-purple-600" />
+          <Activity size={300} className="text-purple-600" />
         </div>
 
         <div className="max-w-md w-full relative z-10">
           <div className="mb-12 text-center lg:text-left">
-            <motion.h2 
+            <motion.h2
               initial={{ x: 20, opacity: 0 }}
               animate={{ x: 0, opacity: 1 }}
               className="text-4xl font-bold text-slate-900 mb-3"
             >
-              Access Portal
+              Sign In
             </motion.h2>
             <p className="text-slate-400 text-lg font-medium">Enter credentials to establish connection</p>
           </div>
 
           {error && (
-            <motion.div 
+            <motion.div
               initial={{ scale: 0.9, opacity: 0 }}
               animate={{ scale: 1, opacity: 1 }}
               className="bg-red-50 border border-red-200 text-red-600 px-5 py-4 rounded-2xl mb-8 text-sm flex items-center gap-4 backdrop-blur-md"
@@ -177,7 +177,7 @@ const Login = () => {
                   <form onSubmit={handleSubmit} className="space-y-7">
                     <div className="group">
                       <label className="block text-xs font-bold text-slate-500 uppercase tracking-widest mb-3 transition-colors group-focus-within:text-purple-600">
-                        Email Identity
+                        Email Address
                       </label>
                       <div className="relative">
                         <div className="absolute inset-y-0 left-0 pl-5 flex items-center pointer-events-none">
@@ -196,7 +196,7 @@ const Login = () => {
 
                     <div className="group">
                       <label className="block text-xs font-bold text-slate-500 uppercase tracking-widest mb-3 transition-colors group-focus-within:text-purple-600">
-                        Security Key
+                        Password
                       </label>
                       <div className="relative">
                         <div className="absolute inset-y-0 left-0 pl-5 flex items-center pointer-events-none">
@@ -231,9 +231,9 @@ const Login = () => {
                         </div>
                         <span className="text-sm text-slate-500 group-hover:text-slate-800 transition-colors font-semibold">Remember Me</span>
                       </label>
-                      
+
                       <Link to="/forgot-password" className="text-sm text-purple-600 hover:text-purple-500 font-bold transition-all hover:underline tracking-tight">
-                        Forgot Security Key?
+                        Forgot Password?
                       </Link>
                     </div>
 
@@ -243,15 +243,15 @@ const Login = () => {
                       type="submit"
                       className="w-full bg-purple-600 hover:bg-purple-500 text-white font-bold py-5 rounded-2xl shadow-lg shadow-purple-200 transition-all flex items-center justify-center gap-4 group"
                     >
-                      <span>Initialize Connection</span>
+                      <span>Sign In</span>
                       <Activity size={20} className="group-hover:animate-pulse" />
                     </motion.button>
                   </form>
 
                   <div className="mt-12 text-center text-sm text-slate-400 font-semibold">
-                    Unauthorized?{' '}
+                    Don't have an account?{' '}
                     <Link to="/register" className="text-purple-600 hover:text-purple-500 transition-colors font-bold tracking-tight">
-                      REGISTER NEW NODE
+                      SIGN UP
                     </Link>
                   </div>
                 </motion.div>
@@ -312,9 +312,9 @@ const Login = () => {
                       )}
                     </motion.button>
                   </form>
-                  
+
                   <div className="mt-8 text-center">
-                    <button 
+                    <button
                       onClick={() => setShowOtpChallenge(false)}
                       className="text-sm text-slate-400 hover:text-slate-600 transition-colors font-medium"
                     >

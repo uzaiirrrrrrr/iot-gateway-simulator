@@ -109,7 +109,7 @@ const ResetPassword = () => {
             transition={{ delay: 0.5 }}
             className="text-6xl font-black text-white mb-6 tracking-tighter"
           >
-            Security Key <br />
+            Password <br />
             <span className="bg-gradient-to-r from-purple-400 to-fuchsia-400 bg-clip-text text-transparent">Update</span>
           </motion.h1>
           <motion.p 
@@ -134,7 +134,7 @@ const ResetPassword = () => {
           <div className="mb-10">
             <Link to="/login" className="inline-flex items-center gap-2 text-slate-400 hover:text-purple-600 font-bold transition-colors text-sm mb-6 group">
               <ArrowLeft size={16} className="group-hover:-translate-x-1 transition-transform" />
-              <span>Back to Access Portal</span>
+              <span>Back to Sign In</span>
             </Link>
             
             <motion.h2 
@@ -175,7 +175,7 @@ const ResetPassword = () => {
               >
                 <div className="group">
                   <label className="block text-xs font-bold text-slate-500 uppercase tracking-widest mb-3 group-focus-within:text-purple-600 transition-colors">
-                    New Security Key (Password)
+                    New Password
                   </label>
                   <div className="relative">
                     <div className="absolute inset-y-0 left-0 pl-5 flex items-center pointer-events-none">
@@ -202,7 +202,7 @@ const ResetPassword = () => {
 
                 <div className="group">
                   <label className="block text-xs font-bold text-slate-500 uppercase tracking-widest mb-3 group-focus-within:text-purple-600 transition-colors">
-                    Confirm Security Key
+                    Confirm Password
                   </label>
                   <div className="relative">
                     <div className="absolute inset-y-0 left-0 pl-5 flex items-center pointer-events-none">
@@ -240,7 +240,7 @@ const ResetPassword = () => {
                       <RefreshCw size={20} className="animate-spin" />
                     </>
                   ) : (
-                    <span>Commit New Security Signature</span>
+                    <span>Update Password</span>
                   )}
                 </motion.button>
               </motion.form>

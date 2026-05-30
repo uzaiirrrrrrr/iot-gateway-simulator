@@ -17,7 +17,8 @@ body {
   -webkit-font-smoothing: antialiased;
 }
 
-button, .btn-primary {
+button,
+.btn-primary {
   transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
 }
 
@@ -34,6 +35,8 @@ button, .btn-primary {
 
 /* Hide scrollbar for IE, Edge and Firefox */
 .no-scrollbar {
-  -ms-overflow-style: none;  /* IE and Edge */
-  scrollbar-width: none;  /* Firefox */
+  -ms-overflow-style: none;
+  /* IE and Edge */
+  scrollbar-width: none;
+  /* Firefox */
 }
