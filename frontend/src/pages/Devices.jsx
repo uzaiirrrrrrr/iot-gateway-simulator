@@ -528,7 +528,8 @@ const Devices = () => {
                     </div>
                 </GatewayDropZone>
             ))
-        )}
+        )
+        }
         </div>
 
         {/* Pagination Controls */}

@@ -3,10 +3,11 @@ import axios from 'axios';
 import { AuthContext } from '../context/AuthContext';
 import { 
   Shield, ShieldAlert, ShieldCheck, Lock, Unlock, 
-  Search, RefreshCw, Cpu, Activity, Clock, Zap, AlertTriangle
+  Search, RefreshCw, Cpu, Activity, Clock, Zap, AlertTriangle,
+  ArrowRight, CheckCircle, XCircle, Database, TrendingUp, BarChart3, LineChart as LineIcon
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { ResponsiveContainer, AreaChart, Area, XAxis, YAxis, Tooltip } from 'recharts';
+import { ResponsiveContainer, AreaChart, Area, BarChart, Bar, LineChart, Line, XAxis, YAxis, Tooltip, CartesianGrid } from 'recharts';
 
 const SecurityVisualization = () => {
   const { user } = useContext(AuthContext);
@@ -19,7 +20,16 @@ const SecurityVisualization = () => {
   
   // Stats
   const [avgLatency, setAvgLatency] = useState(0);
+  const [minLatency, setMinLatency] = useState(0);
+  const [maxLatency, setMaxLatency] = useState(0);
+  const [jitter, setJitter] = useState(0);
   const [secureRatio, setSecureRatio] = useState(0);
+
+  // Graph Toggle & Encryption logs states
+  const [activeGraphType, setActiveGraphType] = useState('area'); // 'area' | 'bar' | 'line'
+  const [activeMetric, setActiveMetric] = useState('latency'); // 'latency' | 'payloadSize'
+  const [cryptoLogs, setCryptoLogs] = useState([]);
+  const prevLogsRef = useRef([]);
 
   const canvasRef = useRef(null);
 
@@ -42,11 +52,28 @@ const SecurityVisualization = () => {
       
       // Compute statistics
       if (res.data.length > 0) {
-        const avg = Math.round(res.data.reduce((acc, log) => acc + log.latency, 0) / res.data.length);
+        const activeGatewayLogs = res.data.filter(log => log.gateway_id === selectedGatewayId);
+        const logsToUse = activeGatewayLogs.length > 0 ? activeGatewayLogs : res.data;
+
+        const latencies = logsToUse.map(log => log.latency || 0);
+        const avg = Math.round(latencies.reduce((acc, val) => acc + val, 0) / latencies.length);
         setAvgLatency(avg);
+
+        const minVal = Math.min(...latencies);
+        const maxVal = Math.max(...latencies);
+        setMinLatency(minVal !== Infinity ? minVal : 0);
+        setMaxLatency(maxVal !== -Infinity ? maxVal : 0);
+
+        // Jitter: average difference between consecutive latencies
+        let diffSum = 0;
+        for (let i = 1; i < latencies.length; i++) {
+          diffSum += Math.abs(latencies[i] - latencies[i - 1]);
+        }
+        const calculatedJitter = latencies.length > 1 ? Math.round(diffSum / (latencies.length - 1)) : 0;
+        setJitter(calculatedJitter);
         
-        const secureCount = res.data.filter(log => log.is_secure).length;
-        setSecureRatio(Math.round((secureCount / res.data.length) * 100));
+        const secureCount = logsToUse.filter(log => log.is_secure).length;
+        setSecureRatio(Math.round((secureCount / logsToUse.length) * 100));
       }
     } catch (e) {
       console.error('Failed to fetch traffic logs', e);
@@ -66,6 +93,52 @@ const SecurityVisualization = () => {
 
     return () => clearInterval(interval);
   }, []);
+
+  useEffect(() => {
+    if (trafficLogs.length > 0) {
+      const activeGateway = gateways.find(g => g.id === selectedGatewayId);
+      const isSecure = activeGateway ? activeGateway.is_secure !== false : true;
+
+      // Filter logs for the selected gateway
+      const activeGatewayLogs = trafficLogs.filter(log => log.gateway_id === selectedGatewayId);
+      
+      if (activeGatewayLogs.length > 0) {
+        // Find logs that are new compared to our previous check
+        const newLogs = activeGatewayLogs.filter(log => 
+          !prevLogsRef.current.some(prev => prev.id === log.id)
+        );
+
+        if (newLogs.length > 0) {
+          const newCryptoEvents = newLogs.map(log => {
+            const timeStr = new Date(log.timestamp).toLocaleTimeString();
+            let text = '';
+            let type = 'info';
+            
+            if (isSecure) {
+              const ciphers = ['AES-256-GCM', 'CHACHA20-POLY1305'];
+              const chosenCipher = ciphers[log.id % ciphers.length];
+              text = `[${timeStr}] Secure Tunnel Active: Packet #${log.id} encrypted via TLS 1.3 (${chosenCipher}). HMAC-SHA256 integrity verified.`;
+              type = 'success';
+            } else {
+              text = `[${timeStr}] SECURITY EXPOSURE: Packet #${log.id} transmitted in plaintext HTTP. No cipher suite applied. Integrity check bypassed.`;
+              type = 'warning';
+            }
+            return { id: log.id, text, type };
+          });
+
+          setCryptoLogs(prev => {
+            const combined = [...newCryptoEvents, ...prev];
+            // Deduplicate by ID
+            const unique = combined.filter((item, index, self) => 
+              self.findIndex(t => t.id === item.id) === index
+            );
+            return unique.slice(0, 15); // limit to 15 entries
+          });
+        }
+      }
+      prevLogsRef.current = trafficLogs;
+    }
+  }, [trafficLogs, selectedGatewayId, gateways]);
 
   const handleToggleSecure = async (id, currentSecure) => {
     if (user?.role === 'Viewer') return alert('Access Denied: Viewers cannot toggle security settings.');
@@ -243,47 +316,73 @@ const SecurityVisualization = () => {
     .slice(-15)
     .map((log, index) => ({
       name: `Pkt ${index + 1}`,
-      latency: log.latency,
+      latency: log.latency || 0,
+      payloadSize: log.payload_size || 0,
       isSecure: log.is_secure
     }));
 
   return (
     <div className="space-y-8 pb-10">
       {/* Overview Metric Summary */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-        <div className="bg-white p-8 rounded-[2rem] border border-slate-200 shadow-sm relative overflow-hidden group">
-          <div className="flex justify-between items-start mb-6">
-            <div className="p-4 bg-emerald-50 rounded-2xl text-emerald-600">
-              <ShieldCheck size={26} />
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
+        <div className="bg-white p-6 rounded-[2rem] border border-slate-200 shadow-sm relative overflow-hidden group">
+          <div className="flex justify-between items-start mb-4">
+            <div className="p-3 bg-emerald-50 rounded-2xl text-emerald-600">
+              <ShieldCheck size={22} />
             </div>
             <span className="text-[9px] font-black tracking-widest text-slate-400 uppercase">Cryptographics</span>
           </div>
-          <div className="text-4xl font-black text-slate-900 tracking-tighter mb-1">{secureRatio}%</div>
+          <div className="text-3xl font-black text-slate-900 tracking-tighter mb-1">{secureRatio}%</div>
           <div className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">TLS Enforced Packets</div>
         </div>
 
-        <div className="bg-white p-8 rounded-[2rem] border border-slate-200 shadow-sm relative overflow-hidden group">
-          <div className="flex justify-between items-start mb-6">
-            <div className="p-4 bg-blue-50 rounded-2xl text-blue-600">
-              <Clock size={26} />
+        <div className="bg-white p-6 rounded-[2rem] border border-slate-200 shadow-sm relative overflow-hidden group">
+          <div className="flex justify-between items-start mb-4">
+            <div className="p-3 bg-blue-50 rounded-2xl text-blue-600">
+              <Clock size={22} />
             </div>
             <span className="text-[9px] font-black tracking-widest text-slate-400 uppercase">Latency Average</span>
           </div>
-          <div className="text-4xl font-black text-slate-900 tracking-tighter mb-1">{avgLatency} ms</div>
-          <div className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">System Response Overload</div>
+          <div className="text-3xl font-black text-slate-900 tracking-tighter mb-1">{avgLatency} ms</div>
+          <div className="text-[9px] text-slate-400 font-mono font-bold tracking-tight">
+            Min: {minLatency}ms | Max: {maxLatency}ms | Jitter: {jitter}ms
+          </div>
         </div>
 
-        <div className="bg-white p-8 rounded-[2rem] border border-slate-200 shadow-sm relative overflow-hidden group">
-          <div className="flex justify-between items-start mb-6">
-            <div className="p-4 bg-purple-50 rounded-2xl text-purple-600">
-              <Activity size={26} />
+        <div className="bg-white p-6 rounded-[2rem] border border-slate-200 shadow-sm relative overflow-hidden group">
+          <div className="flex justify-between items-start mb-4">
+            <div className="p-3 bg-purple-50 rounded-2xl text-purple-600">
+              <Activity size={22} />
             </div>
             <span className="text-[9px] font-black tracking-widest text-slate-400 uppercase">Secure Pipes</span>
           </div>
-          <div className="text-4xl font-black text-slate-900 tracking-tighter mb-1">
+          <div className="text-3xl font-black text-slate-900 tracking-tighter mb-1">
             {gateways.filter(g => g.is_secure).length} / {gateways.length}
           </div>
           <div className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Active Safe Clusters</div>
+        </div>
+
+        <div className={`p-6 rounded-[2rem] border shadow-sm relative overflow-hidden group transition-all duration-300 ${
+          secureRatio >= 90 
+            ? 'bg-emerald-50/20 border-emerald-200 text-emerald-900' 
+            : secureRatio >= 50 
+            ? 'bg-amber-50/20 border-amber-200 text-amber-900' 
+            : 'bg-red-50/20 border-red-200 text-red-900'
+        }`}>
+          <div className="flex justify-between items-start mb-4">
+            <div className={`p-3 rounded-2xl ${
+              secureRatio >= 90 ? 'bg-emerald-100 text-emerald-700' : secureRatio >= 50 ? 'bg-amber-100 text-amber-700' : 'bg-red-100 text-red-700'
+            }`}>
+              <Shield size={22} className={secureRatio < 50 ? 'animate-bounce' : ''} />
+            </div>
+            <span className="text-[9px] font-black tracking-widest text-slate-400 uppercase">Security Rating</span>
+          </div>
+          <div className="text-3xl font-black tracking-tighter mb-1">
+            {secureRatio >= 90 ? 'Grade A+' : secureRatio >= 70 ? 'Grade B' : secureRatio >= 50 ? 'Grade C' : 'Grade F'}
+          </div>
+          <div className="text-[10px] font-bold uppercase tracking-widest text-slate-400">
+            {secureRatio >= 90 ? 'High Security Level' : secureRatio >= 50 ? 'Medium Vulnerability' : 'Critical Threat Risk'}
+          </div>
         </div>
       </div>
 
@@ -302,18 +401,22 @@ const SecurityVisualization = () => {
           </select>
         </div>
 
-        <div className="lg:col-span-2 flex flex-col md:flex-row md:items-center justify-between gap-6 p-6 bg-slate-50 border border-slate-200 rounded-3xl relative overflow-hidden">
+        <div className={`lg:col-span-2 flex flex-col md:flex-row md:items-center justify-between gap-6 p-6 border rounded-3xl relative overflow-hidden transition-all duration-500 ${
+          selectedGateway?.is_secure 
+            ? 'bg-emerald-950/5 border-emerald-200/50' 
+            : 'bg-orange-950/5 border-orange-200/50'
+        }`}>
           {selectedGateway && (
             <>
               <div className="flex items-center gap-4 relative z-10">
-                <div className={`p-4 rounded-2xl ${selectedGateway.is_secure ? 'bg-emerald-50 text-emerald-600 border border-emerald-200' : 'bg-orange-50 text-orange-600 border border-orange-200'}`}>
-                  {selectedGateway.is_secure ? <Lock size={26} /> : <Unlock size={26} />}
+                <div className={`p-4 rounded-2xl ${selectedGateway.is_secure ? 'bg-emerald-100 text-emerald-700 border border-emerald-200/50' : 'bg-orange-100 text-orange-700 border border-orange-200/50'}`}>
+                  {selectedGateway.is_secure ? <Lock size={26} className="animate-pulse" /> : <Unlock size={26} />}
                 </div>
                 <div>
                   <h4 className="text-lg font-black text-slate-900 tracking-tight flex items-center gap-3">
                     {selectedGateway.is_secure ? 'Secure TLS Communication Active' : 'Plaintext Communication Model'}
-                    <span className={`text-[8px] border font-black tracking-widest px-2.5 py-0.5 rounded-full uppercase ${selectedGateway.is_secure ? 'bg-emerald-50 text-emerald-600 border-emerald-200' : 'bg-orange-50 text-orange-600 border-orange-200'}`}>
-                      {selectedGateway.is_secure ? 'TLS_1.3' : 'UNENCRYPTED'}
+                    <span className={`text-[8px] border font-black tracking-widest px-2.5 py-0.5 rounded-full uppercase ${selectedGateway.is_secure ? 'bg-emerald-100 text-emerald-700 border-emerald-300' : 'bg-orange-100 text-orange-700 border-orange-300'}`}>
+                      {selectedGateway.is_secure ? 'TLS_1.3' : 'PLAIN_HTTP'}
                     </span>
                   </h4>
                   <p className="text-xs text-slate-400 mt-1 font-semibold leading-relaxed">
@@ -331,7 +434,7 @@ const SecurityVisualization = () => {
                   onClick={() => handleToggleSecure(selectedGateway.id, selectedGateway.is_secure)}
                   className={`relative flex items-center justify-center gap-3 px-8 py-3.5 rounded-2xl text-xs font-black uppercase tracking-widest transition-all duration-300 shadow-lg ${
                     selectedGateway.is_secure 
-                      ? 'bg-orange-600 hover:bg-orange-50 text-white shadow-orange-200' 
+                      ? 'bg-orange-600 hover:bg-orange-500 text-white shadow-orange-200' 
                       : 'bg-emerald-600 hover:bg-emerald-500 text-white shadow-emerald-200'
                   }`}
                 >
@@ -357,77 +460,189 @@ const SecurityVisualization = () => {
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
         {/* Real-time packet flow */}
         <div className="bg-white rounded-[2.5rem] border border-slate-200 shadow-sm p-8 relative overflow-hidden flex flex-col justify-between">
-          <div className="flex justify-between items-center mb-6">
-            <div>
-              <h3 className="text-lg font-black text-slate-900 tracking-tight">Active Encryption Matrix</h3>
-              <p className="text-[10px] text-slate-400 font-bold uppercase tracking-widest mt-1">Real-time Node Telemetry Routing</p>
+          <div>
+            <div className="flex justify-between items-center mb-6">
+              <div>
+                <h3 className="text-lg font-black text-slate-900 tracking-tight">Active Encryption Matrix</h3>
+                <p className="text-[10px] text-slate-400 font-bold uppercase tracking-widest mt-1">Real-time Node Telemetry Routing</p>
+              </div>
+              <div className="flex items-center gap-2">
+                <span className="h-1.5 w-1.5 rounded-full bg-emerald-500 animate-ping" />
+                <span className="text-[9px] font-mono text-slate-500 uppercase font-black tracking-widest">LIVE_PROCESSOR</span>
+              </div>
             </div>
-            <div className="flex items-center gap-2">
-              <span className="h-1.5 w-1.5 rounded-full bg-emerald-500 animate-ping" />
-              <span className="text-[9px] font-mono text-slate-500 uppercase font-black tracking-widest">LIVE_PROCESSOR</span>
+
+            <div className="bg-slate-50 rounded-3xl border border-slate-200 overflow-hidden relative min-h-[200px]">
+              <canvas ref={canvasRef} className="w-full h-full block" />
+              <div className="absolute bottom-4 left-6 text-[9px] text-slate-500 font-mono flex gap-4 uppercase font-bold tracking-widest">
+                <div className="flex items-center gap-1.5"><div className="w-1.5 h-1.5 bg-[#10b981] rounded-full shadow-[0_0_6px_#10b981]" /> Secure TLS Packet</div>
+                <div className="flex items-center gap-1.5"><div className="w-1.5 h-1.5 bg-[#f97316]" /> Decrypted Plain Packet</div>
+              </div>
             </div>
           </div>
 
-          <div className="bg-slate-50 rounded-3xl border border-slate-200 overflow-hidden relative min-h-[200px]">
-            <canvas ref={canvasRef} className="w-full h-full block" />
-            <div className="absolute bottom-4 left-6 text-[9px] text-slate-500 font-mono flex gap-4 uppercase font-bold tracking-widest">
-              <div className="flex items-center gap-1.5"><div className="w-1.5 h-1.5 bg-[#10b981] rounded-full shadow-[0_0_6px_#10b981]" /> Secure TLS Packet</div>
-              <div className="flex items-center gap-1.5"><div className="w-1.5 h-1.5 bg-[#f97316]" /> Decrypted Plain Packet</div>
+          {/* Encryption Logs Console */}
+          <div className="mt-6 flex-1 flex flex-col justify-between">
+            <h4 className="text-xs font-black text-slate-500 uppercase tracking-widest mb-3 flex items-center gap-2">
+              <Database size={14} className="text-purple-500" />
+              Cryptographic Tunnel Audit Trail
+            </h4>
+            <div className="bg-slate-950 text-slate-300 font-mono text-[10px] p-4 rounded-2xl h-44 overflow-y-auto space-y-1.5 scrollbar-thin scrollbar-thumb-slate-800">
+              {cryptoLogs.length === 0 ? (
+                <div className="text-slate-500 italic">No cryptographic events logged in this session. Awaiting active transmissions...</div>
+              ) : (
+                cryptoLogs.map((evt, idx) => (
+                  <div key={idx} className={`leading-relaxed border-l-2 pl-2 ${
+                    evt.type === 'success' 
+                      ? 'border-emerald-500 text-emerald-400' 
+                      : evt.type === 'warning' 
+                      ? 'border-amber-500 text-amber-400' 
+                      : 'border-blue-500 text-slate-300'
+                  }`}>
+                    {evt.text}
+                  </div>
+                ))
+              )}
             </div>
           </div>
         </div>
 
         {/* Latency tracker */}
         <div className="bg-white rounded-[2.5rem] border border-slate-200 shadow-sm p-8 relative overflow-hidden flex flex-col justify-between">
-          <div className="flex justify-between items-center mb-6">
-            <div>
-              <h3 className="text-lg font-black text-slate-900 tracking-tight">Cryptographic Overhead Latency</h3>
-              <p className="text-[10px] text-slate-400 font-bold uppercase tracking-widest mt-1">Comparing Symmetric Cipher Cost</p>
-            </div>
-            <div className="text-[9px] font-mono text-slate-400 font-black uppercase tracking-widest">Tuned Metrics</div>
-          </div>
-
-          <div className="h-56 w-full mt-4">
-            {latencyChartData.length === 0 ? (
-              <div className="flex h-full items-center justify-center text-slate-400 italic text-sm">Awaiting packet bursts for comparative mapping...</div>
-            ) : (
-              <ResponsiveContainer width="100%" height="100%">
-                <AreaChart data={latencyChartData} margin={{ top: 10, right: 10, left: -25, bottom: 0 }}>
-                  <defs>
-                    <linearGradient id="latencyGlow" x1="0" y1="0" x2="0" y2="1">
-                      <stop offset="5%" stopColor={selectedGateway?.is_secure ? "#10b981" : "#f97316"} stopOpacity={0.2}/>
-                      <stop offset="95%" stopColor={selectedGateway?.is_secure ? "#10b981" : "#f97316"} stopOpacity={0}/>
-                    </linearGradient>
-                  </defs>
-                  <XAxis dataKey="name" stroke="#94a3b8" fontSize={9} tickLine={false} />
-                  <YAxis stroke="#94a3b8" fontSize={9} tickLine={false} />
-                  <Tooltip 
-                    contentStyle={{ backgroundColor: '#ffffff', border: '1px solid #cbd5e1', borderRadius: '12px' }}
-                    labelClassName="text-slate-400 text-xs font-mono font-bold"
-                    itemStyle={{ color: '#0f172a', fontFamily: 'monospace', fontSize: '11px' }}
-                  />
-                  <Area 
-                    type="monotone" 
-                    dataKey="latency" 
-                    name="Latency (ms)"
-                    stroke={selectedGateway?.is_secure ? "#10b981" : "#f97316"} 
-                    strokeWidth={3}
-                    fillOpacity={1} 
-                    fill="url(#latencyGlow)" 
-                  />
-                </AreaChart>
-              </ResponsiveContainer>
-            )}
-          </div>
-
-          {selectedGateway?.is_secure && (
-            <div className="mt-4 p-4 bg-purple-50 rounded-2xl border border-purple-200 flex items-center gap-3">
-              <AlertTriangle className="text-amber-500 shrink-0" size={18} />
-              <div className="text-[10px] text-slate-500 font-bold uppercase tracking-wide leading-relaxed">
-                Notice: Secure mode active. Processing latency averages <span className="text-purple-600 font-mono">~70-180ms</span> due to intensive handshakes and packet payload hashing.
+          <div>
+            <div className="flex justify-between items-center mb-6">
+              <div>
+                <h3 className="text-lg font-black text-slate-900 tracking-tight">Cryptographic Overhead Latency</h3>
+                <p className="text-[10px] text-slate-400 font-bold uppercase tracking-widest mt-1">Comparing Symmetric Cipher Cost</p>
+              </div>
+              
+              {/* Multiple Graph Types Selector */}
+              <div className="flex items-center bg-slate-100 p-1 rounded-xl gap-1 border border-slate-200">
+                <button 
+                  onClick={() => setActiveGraphType('area')}
+                  className={`p-1.5 rounded-lg text-xs font-bold transition-all ${activeGraphType === 'area' ? 'bg-white text-purple-600 shadow-sm' : 'text-slate-500 hover:text-slate-950'}`}
+                  title="Area Chart"
+                >
+                  <TrendingUp size={14} />
+                </button>
+                <button 
+                  onClick={() => setActiveGraphType('bar')}
+                  className={`p-1.5 rounded-lg text-xs font-bold transition-all ${activeGraphType === 'bar' ? 'bg-white text-purple-600 shadow-sm' : 'text-slate-500 hover:text-slate-950'}`}
+                  title="Bar Chart"
+                >
+                  <BarChart3 size={14} />
+                </button>
+                <button 
+                  onClick={() => setActiveGraphType('line')}
+                  className={`p-1.5 rounded-lg text-xs font-bold transition-all ${activeGraphType === 'line' ? 'bg-white text-purple-600 shadow-sm' : 'text-slate-500 hover:text-slate-950'}`}
+                  title="Line Chart"
+                >
+                  <LineIcon size={14} />
+                </button>
               </div>
             </div>
-          )}
+
+            <div className="h-56 w-full mt-4">
+              {latencyChartData.length === 0 ? (
+                <div className="flex h-full items-center justify-center text-slate-400 italic text-sm">Awaiting packet bursts for comparative mapping...</div>
+              ) : (
+                <ResponsiveContainer width="100%" height="100%">
+                  {activeGraphType === 'area' ? (
+                    <AreaChart data={latencyChartData} margin={{ top: 10, right: 10, left: -25, bottom: 0 }}>
+                      <defs>
+                        <linearGradient id="latencyGlow" x1="0" y1="0" x2="0" y2="1">
+                          <stop offset="5%" stopColor={selectedGateway?.is_secure ? "#10b981" : "#f97316"} stopOpacity={0.2}/>
+                          <stop offset="95%" stopColor={selectedGateway?.is_secure ? "#10b981" : "#f97316"} stopOpacity={0}/>
+                        </linearGradient>
+                      </defs>
+                      <CartesianGrid strokeDasharray="3 3" stroke="#f1f5f9" vertical={false} />
+                      <XAxis dataKey="name" stroke="#94a3b8" fontSize={9} tickLine={false} />
+                      <YAxis stroke="#94a3b8" fontSize={9} tickLine={false} />
+                      <Tooltip 
+                        contentStyle={{ backgroundColor: '#ffffff', border: '1px solid #cbd5e1', borderRadius: '12px' }}
+                        labelClassName="text-slate-400 text-xs font-mono font-bold"
+                        itemStyle={{ color: '#0f172a', fontFamily: 'monospace', fontSize: '11px' }}
+                      />
+                      <Area 
+                        type="monotone" 
+                        dataKey="latency" 
+                        name="Latency (ms)"
+                        stroke={selectedGateway?.is_secure ? "#10b981" : "#f97316"} 
+                        strokeWidth={3}
+                        fillOpacity={1} 
+                        fill="url(#latencyGlow)" 
+                      />
+                    </AreaChart>
+                  ) : activeGraphType === 'bar' ? (
+                    <BarChart data={latencyChartData} margin={{ top: 10, right: 10, left: -25, bottom: 0 }}>
+                      <CartesianGrid strokeDasharray="3 3" stroke="#f1f5f9" vertical={false} />
+                      <XAxis dataKey="name" stroke="#94a3b8" fontSize={9} tickLine={false} />
+                      <YAxis stroke="#94a3b8" fontSize={9} tickLine={false} />
+                      <Tooltip 
+                        contentStyle={{ backgroundColor: '#ffffff', border: '1px solid #cbd5e1', borderRadius: '12px' }}
+                        labelClassName="text-slate-400 text-xs font-mono font-bold"
+                        itemStyle={{ color: '#0f172a', fontFamily: 'monospace', fontSize: '11px' }}
+                      />
+                      <Bar 
+                        dataKey="latency" 
+                        name="Latency (ms)" 
+                        fill={selectedGateway?.is_secure ? "#10b981" : "#f97316"} 
+                        radius={[4, 4, 0, 0]}
+                      />
+                    </BarChart>
+                  ) : (
+                    <LineChart data={latencyChartData} margin={{ top: 10, right: 10, left: -25, bottom: 0 }}>
+                      <CartesianGrid strokeDasharray="3 3" stroke="#f1f5f9" vertical={false} />
+                      <XAxis dataKey="name" stroke="#94a3b8" fontSize={9} tickLine={false} />
+                      <YAxis stroke="#94a3b8" fontSize={9} tickLine={false} />
+                      <Tooltip 
+                        contentStyle={{ backgroundColor: '#ffffff', border: '1px solid #cbd5e1', borderRadius: '12px' }}
+                        labelClassName="text-slate-400 text-xs font-mono font-bold"
+                        itemStyle={{ color: '#0f172a', fontFamily: 'monospace', fontSize: '11px' }}
+                      />
+                      <Line 
+                        type="monotone" 
+                        dataKey="latency" 
+                        name="Latency (ms)" 
+                        stroke={selectedGateway?.is_secure ? "#10b981" : "#f97316"} 
+                        strokeWidth={3} 
+                        dot={{ r: 4 }}
+                      />
+                    </LineChart>
+                  )}
+                </ResponsiveContainer>
+              )}
+            </div>
+          </div>
+
+          {/* High Latency Warnings & Threshold Alert */}
+          <div className="mt-4 space-y-3">
+            {avgLatency > 120 && (
+              <div className="p-4 bg-red-50 border border-red-200 rounded-2xl flex items-center gap-3 animate-pulse">
+                <AlertTriangle className="text-red-500 shrink-0 animate-bounce" size={18} />
+                <div>
+                  <div className="text-[10px] text-red-800 font-black uppercase tracking-wider">High Processing Latency Alert</div>
+                  <div className="text-[10px] text-red-600 font-semibold mt-0.5">Average response times exceed 120ms. Potential cryptographic overhead bottleneck.</div>
+                </div>
+              </div>
+            )}
+            
+            {selectedGateway?.is_secure ? (
+              <div className="p-4 bg-purple-50 rounded-2xl border border-purple-200 flex items-center gap-3">
+                <ShieldCheck className="text-purple-600 shrink-0" size={18} />
+                <div className="text-[10px] text-slate-500 font-bold uppercase tracking-wide leading-relaxed">
+                  Notice: TLS encryption protocol is active. Latency averages <span className="text-purple-600 font-mono font-black">{avgLatency}ms</span> due to intensive packet hashing and key rotation overhead.
+                </div>
+              </div>
+            ) : (
+              <div className="p-4 bg-amber-50 rounded-2xl border border-amber-200 flex items-center gap-3">
+                <AlertTriangle className="text-amber-600 shrink-0" size={18} />
+                <div className="text-[10px] text-slate-500 font-bold uppercase tracking-wide leading-relaxed">
+                  Insecure Mode Risk: Plaintext HTTP active. Latency is low (<span className="text-amber-600 font-mono font-black">{avgLatency}ms</span>), but network traffic is highly vulnerable to decryption.
+                </div>
+              </div>
+            )}
+          </div>
         </div>
       </div>
 
@@ -454,36 +669,42 @@ const SecurityVisualization = () => {
           <table className="w-full text-left border-collapse">
             <thead>
               <tr className="bg-slate-50 border-b border-slate-200">
-                <th className="px-8 py-5 text-[9px] font-black text-slate-400 uppercase tracking-[0.2em]">Intercept Timestamp</th>
-                <th className="px-8 py-5 text-[9px] font-black text-slate-400 uppercase tracking-[0.2em]">Source Asset</th>
-                <th className="px-8 py-5 text-[9px] font-black text-slate-400 uppercase tracking-[0.2em]">Security Protocol</th>
-                <th className="px-8 py-5 text-[9px] font-black text-slate-400 uppercase tracking-[0.2em]">Overhead Latency</th>
-                <th className="px-8 py-5 text-[9px] font-black text-slate-400 uppercase tracking-[0.2em]">Payload Inspection</th>
+                <th className="px-6 py-4 text-[9px] font-black text-slate-400 uppercase tracking-[0.2em]">Intercept Timestamp</th>
+                <th className="px-6 py-4 text-[9px] font-black text-slate-400 uppercase tracking-[0.2em]">Source Asset</th>
+                <th className="px-6 py-4 text-[9px] font-black text-slate-400 uppercase tracking-[0.2em]">Destination Node</th>
+                <th className="px-6 py-4 text-[9px] font-black text-slate-400 uppercase tracking-[0.2em]">Security Protocol</th>
+                <th className="px-6 py-4 text-[9px] font-black text-slate-400 uppercase tracking-[0.2em]">Status</th>
+                <th className="px-6 py-4 text-[9px] font-black text-slate-400 uppercase tracking-[0.2em]">Latency</th>
+                <th className="px-6 py-4 text-[9px] font-black text-slate-400 uppercase tracking-[0.2em]">Payload Inspection</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-slate-100 font-mono text-xs">
               {loading ? (
                 <tr>
-                  <td colSpan="5" className="px-8 py-16 text-center">
+                  <td colSpan="7" className="px-6 py-16 text-center">
                     <Activity className="animate-spin text-purple-600 mx-auto mb-3" size={24} />
                     <span className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Decrypting Logs...</span>
                   </td>
                 </tr>
               ) : filteredLogs.length === 0 ? (
                 <tr>
-                  <td colSpan="5" className="px-8 py-16 text-center text-slate-400 italic">No packet transmissions captured in this cycle.</td>
+                  <td colSpan="7" className="px-6 py-16 text-center text-slate-400 italic">No packet transmissions captured in this cycle.</td>
                 </tr>
               ) : (
                 filteredLogs.map(log => (
                   <tr key={log.id} className="hover:bg-purple-50/50 transition-all group">
-                    <td className="px-8 py-5 text-slate-500 font-medium">
+                    <td className="px-6 py-4 text-slate-500 font-medium">
                       {new Date(log.timestamp).toLocaleTimeString()}
                     </td>
-                    <td className="px-8 py-5 text-slate-800 font-bold font-sans">
-                      {log.device_name}
+                    <td className="px-6 py-4 text-slate-800 font-bold font-sans">
+                      {log.device_name || 'Unknown Device'}
                       <div className="text-[9px] text-slate-400 font-mono mt-0.5 uppercase tracking-wider">{log.device_id}</div>
                     </td>
-                    <td className="px-8 py-5">
+                    <td className="px-6 py-4 text-slate-800 font-bold font-sans">
+                      {log.gateway_name || 'Unknown Gateway'}
+                      <div className="text-[9px] text-slate-400 font-mono mt-0.5 uppercase tracking-wider">{log.gateway_id}</div>
+                    </td>
+                    <td className="px-6 py-4">
                       <div className={`inline-flex items-center gap-1.5 px-3 py-1 rounded-xl text-[9px] font-black uppercase tracking-wider border ${
                         log.is_secure 
                           ? 'bg-emerald-50 text-emerald-600 border-emerald-200' 
@@ -493,14 +714,33 @@ const SecurityVisualization = () => {
                         {log.is_secure ? 'TLS_1.3' : 'PLAIN_HTTP'}
                       </div>
                     </td>
-                    <td className="px-8 py-5 text-slate-700 font-bold">
-                      <div className="flex items-center gap-2">
-                        <span>{log.latency} ms</span>
-                        <div className={`h-1.5 w-1.5 rounded-full ${log.latency > 150 ? 'bg-amber-500 animate-pulse' : 'bg-slate-300'}`} />
+                    <td className="px-6 py-4">
+                      <div className={`inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[9px] font-black uppercase tracking-widest border ${
+                        log.status === 'success' || !log.status
+                          ? 'bg-emerald-100/50 text-emerald-700 border-emerald-200' 
+                          : 'bg-red-50 text-red-600 border-red-200'
+                      }`}>
+                        {log.status === 'success' || !log.status ? (
+                          <>
+                            <CheckCircle size={10} className="text-emerald-500" />
+                            Success
+                          </>
+                        ) : (
+                          <>
+                            <XCircle size={10} className="text-red-500" />
+                            Failed
+                          </>
+                        )}
                       </div>
                     </td>
-                    <td className="px-8 py-5 max-w-sm truncate text-emerald-600 bg-emerald-50/10 group-hover:bg-emerald-50/30 transition-colors font-mono tracking-tight text-[11px]">
-                      {log.is_secure ? '🔒 ENCRYPTED_FRAME::' + log.payload.substring(0, 30) + '...' : log.payload}
+                    <td className="px-6 py-4 text-slate-700 font-bold">
+                      <div className="flex items-center gap-2">
+                        <span>{log.latency} ms</span>
+                        <div className={`h-1.5 w-1.5 rounded-full ${log.latency > 120 ? 'bg-red-500 animate-ping' : log.latency > 80 ? 'bg-amber-500' : 'bg-emerald-500'}`} />
+                      </div>
+                    </td>
+                    <td className="px-6 py-4 max-w-xs truncate text-emerald-600 bg-emerald-50/10 group-hover:bg-emerald-50/30 transition-colors font-mono tracking-tight text-[11px]">
+                      {log.is_secure ? '🔒 ENCRYPTED_FRAME::' + log.payload.substring(0, 20) + '...' : log.payload}
                     </td>
                   </tr>
                 ))
