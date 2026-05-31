@@ -32,6 +32,12 @@ const SecurityVisualization = () => {
   const [filterProtocol, setFilterProtocol] = useState('all'); // 'all' | 'secure' | 'insecure'
   const [filterStatus, setFilterStatus] = useState('all'); // 'all' | 'success' | 'failed'
   const prevLogsRef = useRef([]);
+  const selectedGatewayIdRef = useRef('');
+
+  // Synchronize ref with selectedGatewayId state
+  useEffect(() => {
+    selectedGatewayIdRef.current = selectedGatewayId;
+  }, [selectedGatewayId]);
 
   const canvasRef = useRef(null);
 
@@ -39,7 +45,7 @@ const SecurityVisualization = () => {
     try {
       const res = await axios.get('http://localhost:5000/api/gateways');
       setGateways(res.data);
-      if (res.data.length > 0 && !selectedGatewayId) {
+      if (res.data.length > 0 && !selectedGatewayIdRef.current) {
         setSelectedGatewayId(res.data[0].id);
       }
     } catch (e) {
@@ -54,7 +60,7 @@ const SecurityVisualization = () => {
       
       // Compute statistics
       if (res.data.length > 0) {
-        const activeGatewayLogs = res.data.filter(log => log.gateway_id === selectedGatewayId);
+        const activeGatewayLogs = res.data.filter(log => log.gateway_id === selectedGatewayIdRef.current);
         const logsToUse = activeGatewayLogs.length > 0 ? activeGatewayLogs : res.data;
 
         const latencies = logsToUse.map(log => log.latency || 0);
@@ -95,6 +101,13 @@ const SecurityVisualization = () => {
 
     return () => clearInterval(interval);
   }, []);
+
+  // Fetch immediately when selection changes
+  useEffect(() => {
+    if (selectedGatewayId) {
+      fetchTrafficLogs();
+    }
+  }, [selectedGatewayId]);
 
   useEffect(() => {
     if (trafficLogs.length > 0) {
