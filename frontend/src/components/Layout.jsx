@@ -46,7 +46,10 @@ const Layout = () => {
           <div className="p-2 bg-purple-500/10 rounded-xl border border-purple-500/20">
             <Activity className="text-purple-400" size={24} />
           </div>
-          <span className="bg-gradient-to-r from-white to-slate-400 bg-clip-text text-transparent">IoT Nexus</span>
+          <div className="flex flex-col">
+            <span className="bg-gradient-to-r from-white to-slate-300 bg-clip-text text-transparent text-sm font-black tracking-wider uppercase">IoT Gateway</span>
+            <span className="text-[10px] text-purple-400 font-bold uppercase tracking-[0.2em] -mt-0.5">Simulator</span>
+          </div>
         </div>
         
         <div className="flex-1 overflow-y-auto py-2 no-scrollbar">
