@@ -115,6 +115,13 @@ exports.login = async (req, res) => {
         // Check if this specific device is registered
         const knownDevice = registeredDevices.find(d => d.device_id === deviceId);
         if (!knownDevice) {
+          // Verify that SMTP credentials are set
+          if (!process.env.EMAIL_USER || !process.env.EMAIL_PASS) {
+            return res.status(500).json({
+              message: 'Server Configuration Error: To send verification emails, you MUST add EMAIL_USER and EMAIL_PASS to your backend/.env file and restart the server!'
+            });
+          }
+
           // UNRECOGNIZED DEVICE — block login, generate device OTP challenge
           const otp = Math.floor(100000 + Math.random() * 900000).toString();
           const expiresAt = new Date(Date.now() + 10 * 60 * 1000); // 10 minutes
@@ -127,18 +134,42 @@ exports.login = async (req, res) => {
           await db.query(`INSERT INTO audit_logs (user_id, action, details, ip_address) VALUES ($1, $2, $3, $4)`,
             [user.id, 'UNRECOGNIZED_DEVICE_ACCESS_ATTEMPT', `Unrecognized device: ${deviceName || deviceId}. OTP challenge initiated.`, req.ip]);
 
-          console.log(`\n=============================================`);
-          console.log(`[DEVICE VERIFICATION OTP]`);
-          console.log(`User: ${user.email}`);
-          console.log(`Device: ${deviceName || deviceId}`);
-          console.log(`OTP Code: ${otp}`);
-          console.log(`Expires: ${expiresAt.toLocaleString()}`);
-          console.log(`=============================================\n`);
+          // Send Real Email using Nodemailer
+          try {
+            const transporter = createTransporter();
+            const mailOptions = {
+              from: `"IoT Gateway Security" <${process.env.EMAIL_USER}>`,
+              to: user.email,
+              subject: "Security Alert: Verification Code for Unrecognized Device",
+              html: `
+                <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px; border: 1px solid #e2e8f0; border-radius: 10px;">
+                  <h2 style="color: #6366f1; margin-bottom: 20px;">IoT Gateway Simulator — Device Verification</h2>
+                  <p>We detected an attempt to sign in to your account from an unrecognized device: <strong>${deviceName || deviceId || 'Unknown Device'}</strong>.</p>
+                  <p>Please enter the following 6-digit verification code to register this device and complete your sign-in. This code will expire in 10 minutes.</p>
+                  <div style="text-align: center; margin: 30px 0;">
+                    <span style="font-family: monospace; font-size: 32px; font-weight: bold; letter-spacing: 5px; color: #4f46e5; background-color: #f5f3ff; padding: 10px 20px; border-radius: 8px; border: 1px dashed #c084fc; display: inline-block;">
+                      ${otp}
+                    </span>
+                  </div>
+                  <p style="color: #64748b; font-size: 12px; margin-top: 20px;">If you did not request this code, someone else may be attempting to access your account. Please change your password immediately.</p>
+                  <p style="color: #64748b; font-size: 10px; border-top: 1px solid #eee; padding-top: 15px; margin-top: 25px; text-align: center;">
+                    © 2026 IoT Gateway Simulator.
+                  </p>
+                </div>
+              `
+            };
+            await transporter.sendMail(mailOptions);
+            console.log(`[Email Sent] Verification code successfully emailed to ${user.email}`);
+          } catch (mailError) {
+            console.error('Error sending device verification email:', mailError);
+            return res.status(500).json({
+              message: 'Failed to transmit verification email. Please check your SMTP settings or try again later.'
+            });
+          }
 
           return res.status(403).json({
             status: 'device_verification_required',
-            message: 'Unrecognized device detected. A verification code has been transmitted.',
-            simulationOtp: otp,
+            message: 'Unrecognized device detected. A verification code has been transmitted to your email address.',
             email: user.email
           });
         }
