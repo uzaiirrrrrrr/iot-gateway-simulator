@@ -16,7 +16,9 @@ router.post('/clear', requireRole(['Admin']), analyticsController.clearLogs);
 // Cloud Pipelines Endpoint
 router.get('/pipelines', analyticsController.getPipelines);
 router.post('/pipelines', requireRole(['Admin', 'User']), analyticsController.createPipeline);
+router.put('/pipelines/:id', requireRole(['Admin', 'User']), analyticsController.updatePipeline);
 router.delete('/pipelines/:id', requireRole(['Admin']), analyticsController.deletePipeline);
 router.patch('/pipelines/:id/status', requireRole(['Admin', 'User']), analyticsController.updatePipelineStatus);
+router.get('/pipeline-packets', analyticsController.getPipelinePackets);
 
 module.exports = router;

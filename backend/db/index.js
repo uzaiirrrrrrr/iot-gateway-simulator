@@ -54,6 +54,15 @@ const runMigrations = async () => {
       );
     `);
 
+    // Cloud pipelines custom configuration columns
+    await pool.query(`
+      ALTER TABLE cloud_pipelines 
+      ADD COLUMN IF NOT EXISTS topic VARCHAR(255) DEFAULT 'iot/telemetry',
+      ADD COLUMN IF NOT EXISTS port INT DEFAULT 8883,
+      ADD COLUMN IF NOT EXISTS qos INT DEFAULT 1,
+      ADD COLUMN IF NOT EXISTS encryption VARCHAR(50) DEFAULT 'TLS 1.3',
+      ADD COLUMN IF NOT EXISTS transmission_rate INT DEFAULT 2000;
+    `);
 
     console.log('Database auto-migrations executed successfully. Security recovery + device registry verified.');
   } catch (err) {
