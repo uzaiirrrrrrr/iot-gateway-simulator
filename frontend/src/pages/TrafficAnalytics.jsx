@@ -15,7 +15,7 @@ const TrafficAnalytics = () => {
   const [chartData, setChartData] = useState([]);
   const [gateways, setGateways] = useState([]);
   const [trafficLogs, setTrafficLogs] = useState([]);
-  const [spikeThreshold, setSpikeThreshold] = useState(80); // adjustable threshold
+  const [spikeThreshold, setSpikeThreshold] = useState(20); // adjustable threshold
   const [loading, setLoading] = useState(true);
   const [gatewayFilter, setGatewayFilter] = useState('all');
 
@@ -84,9 +84,9 @@ const TrafficAnalytics = () => {
         log.id,
         new Date(log.timestamp).toISOString(),
         log.device_id,
-        `"${log.device_name || ''}"`,
+        `"${(log.device_name || '').replace(/"/g, '""')}"`,
         log.gateway_id,
-        `"${log.gateway_name || ''}"`,
+        `"${(log.gateway_name || '').replace(/"/g, '""')}"`,
         log.payload_size,
         log.is_secure ? 'TLS/HTTPS' : 'HTTP',
         log.latency,
@@ -94,14 +94,16 @@ const TrafficAnalytics = () => {
       ].join(','))
     ];
     
-    const csvContent = 'data:text/csv;charset=utf-8,' + csvRows.join('\n');
-    const encodedUri = encodeURI(csvContent);
+    const csvContent = csvRows.join('\n');
+    const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+    const url = URL.createObjectURL(blob);
     const link = document.createElement('a');
-    link.setAttribute('href', encodedUri);
+    link.setAttribute('href', url);
     link.setAttribute('download', `IoT_Nexus_Traffic_Logs_${new Date().toISOString().slice(0,10)}.csv`);
     document.body.appendChild(link);
     link.click();
     document.body.removeChild(link);
+    URL.revokeObjectURL(url);
   };
 
   const filteredLogs = trafficLogs.filter(log => {

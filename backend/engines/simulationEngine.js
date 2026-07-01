@@ -87,11 +87,26 @@ class SimulationEngine {
       const now = Date.now();
 
       for (let gw of activeGateways.rows) {
-        const lastFire = this.lastTrafficFire[gw.id] || 0;
-        const rate = gw.traffic_rate || this.defaultTrafficRate;
+        // Check if gateway is under an active simulated attack (within the last 60 seconds)
+        const recentAttacks = await db.query(
+          `SELECT type, intensity FROM attack_logs WHERE target_gateway_id = $1 AND timestamp >= NOW() - INTERVAL '1 minute' ORDER BY timestamp DESC LIMIT 1`,
+          [gw.id]
+        );
+        const activeAttack = recentAttacks.rows[0];
 
-        if (now - lastFire < rate) continue;
-        this.lastTrafficFire[gw.id] = now;
+        const lastFire = this.lastTrafficFire[gw.id] || 0;
+        let rate = gw.traffic_rate || this.defaultTrafficRate;
+        if (activeAttack) {
+          rate = 500; // rapid fire during attack
+        }
+
+        // Random background burst check (1.5% chance per second per gateway)
+        const isRandomBurst = !activeAttack && Math.random() < 0.015;
+
+        if (now - lastFire < rate && !isRandomBurst) continue;
+        if (!isRandomBurst) {
+          this.lastTrafficFire[gw.id] = now;
+        }
 
         const devices = await db.query(`SELECT * FROM devices WHERE gateway_id = $1 AND status = 'active'`, [gw.id]);
 
@@ -100,56 +115,74 @@ class SimulationEngine {
         const hasDisconnectedPipeline = pipelinesResult.rows.some(p => p.status === 'disconnected');
         const packetStatus = hasDisconnectedPipeline ? 'failed' : 'success';
 
+        let multiplier = 1;
+        if (activeAttack) {
+          const intensity = activeAttack.intensity || 'High';
+          multiplier = intensity === 'Low' ? 3 : intensity === 'Medium' ? 6 : 12;
+          console.log(`[SimulationEngine] Gateway ${gw.id} is under ${activeAttack.type} attack (${intensity} intensity). Generating ${multiplier}x packet volume.`);
+        } else if (isRandomBurst) {
+          multiplier = Math.floor(Math.random() * 8) + 5; // 5 to 12 packets
+          await db.query(
+            `INSERT INTO alerts (gateway_id, severity, message) VALUES ($1, $2, $3)`,
+            [gw.id, 'WARNING', `Anomalous traffic burst detected on ${gw.name}: Ingestion rate exceeded normal baseline.`]
+          );
+          console.log(`[SimulationEngine] Simulating natural background traffic burst on ${gw.id} (${multiplier}x packets).`);
+        }
+
         for (let dev of devices.rows) {
           const isSecure = gw.is_secure !== false; // Default to true if not defined
           
-          // Model realistic latency: TLS encryption adds cryptographic and handshake overhead
-          let latency;
-          if (isSecure) {
-              // Secure mode (TLS/HTTPS): 70ms to 180ms baseline, simulating cryptographic validation
-              latency = Math.floor(Math.random() * 110) + 70;
-          } else {
-              // Insecure mode (HTTP): 10ms to 40ms baseline, unencrypted rapid transmission
-              latency = Math.floor(Math.random() * 30) + 10;
-          }
-          
-          // Generate context-aware data
-          let payload;
-          if (dev.type === 'Sensor') {
-              payload = JSON.stringify({ temp: (Math.random()*30 + 10).toFixed(2), hum: (Math.random()*50 + 30).toFixed(0), unit: 'C' });
-          } else if (dev.type === 'Camera') {
-              payload = `IMAGE_DATA:0x${crypto.randomBytes(16).toString('hex')}`;
-          } else if (dev.type === 'Motion') {
-              payload = JSON.stringify({ motion: Math.random() > 0.8, zone: 'A1', sensitivity: 0.9 });
-          } else {
-              payload = `CMD_ACK:${Math.random() > 0.5 ? 'SUCCESS' : 'PENDING'}`;
-          }
+          for (let m = 0; m < multiplier; m++) {
+            // Model realistic latency: TLS encryption adds cryptographic and handshake overhead
+            let latency;
+            if (isSecure) {
+                // Secure mode (TLS/HTTPS): 70ms to 180ms baseline, simulating cryptographic validation
+                latency = Math.floor(Math.random() * 110) + 70;
+            } else {
+                // Insecure mode (HTTP): 10ms to 40ms baseline, unencrypted rapid transmission
+                latency = Math.floor(Math.random() * 30) + 10;
+            }
+            
+            // Generate context-aware data
+            let payload;
+            if (dev.type === 'Sensor' || dev.type === 'temperature') {
+                payload = JSON.stringify({ temp: (Math.random()*30 + 10).toFixed(2), hum: (Math.random()*50 + 30).toFixed(0), unit: 'C' });
+            } else if (dev.type === 'Camera' || dev.type === 'camera') {
+                payload = `IMAGE_DATA:0x${crypto.randomBytes(16).toString('hex')}`;
+            } else if (dev.type === 'Motion' || dev.type === 'motion') {
+                payload = JSON.stringify({ motion: Math.random() > 0.8, zone: 'A1', sensitivity: 0.9 });
+            } else {
+                payload = `CMD_ACK:${Math.random() > 0.5 ? 'SUCCESS' : 'PENDING'}`;
+            }
 
-          const payloadSize = Buffer.byteLength(payload);
+            const payloadSize = Buffer.byteLength(payload);
 
-          await db.query(
-            `INSERT INTO traffic_logs (device_id, gateway_id, payload_size, is_secure, latency, status, payload)
-             VALUES ($1, $2, $3, $4, $5, $6, $7)`,
-            [dev.id, dev.gateway_id, payloadSize, isSecure, latency, packetStatus, payload]
-          );
+            await db.query(
+              `INSERT INTO traffic_logs (device_id, gateway_id, payload_size, is_secure, latency, status, payload)
+               VALUES ($1, $2, $3, $4, $5, $6, $7)`,
+              [dev.id, dev.gateway_id, payloadSize, isSecure, latency, packetStatus, payload]
+            );
 
-          // Update device view with last payload
-          await db.query(`UPDATE devices SET last_payload = $1 WHERE id = $2`, [payload, dev.id]);
+            // Update device view with last payload
+            if (m === multiplier - 1) {
+              await db.query(`UPDATE devices SET last_payload = $1 WHERE id = $2`, [payload, dev.id]);
+            }
 
-          // Trigger alert if there is a failed packet transmission due to pipeline outage
-          if (packetStatus === 'failed' && Math.random() > 0.7) {
-              await db.query(
-                `INSERT INTO alerts (gateway_id, severity, message)
-                 VALUES ($1, 'WARNING', 'Packet transmission drop on Gateway ${gw.id}: Cloud Ingestion Pipeline Offline')`,
-                [gw.id]
-              );
-          } else if (packetStatus === 'success') {
-              // Store successfully transmitted payload to the simulated cloud
-              await db.query(
-                `INSERT INTO cloud_storage_logs (device_id, gateway_id, payload)
-                 VALUES ($1, $2, $3)`,
-                [dev.id, gw.id, payload]
-              );
+            // Trigger alert if there is a failed packet transmission due to pipeline outage
+            if (packetStatus === 'failed' && Math.random() > 0.7) {
+                await db.query(
+                  `INSERT INTO alerts (gateway_id, severity, message)
+                   VALUES ($1, 'WARNING', 'Packet transmission drop on Gateway ${gw.id}: Cloud Ingestion Pipeline Offline')`,
+                  [gw.id]
+                );
+            } else if (packetStatus === 'success') {
+                // Store successfully transmitted payload to the simulated cloud
+                await db.query(
+                  `INSERT INTO cloud_storage_logs (device_id, gateway_id, payload)
+                   VALUES ($1, $2, $3)`,
+                  [dev.id, gw.id, payload]
+                );
+            }
           }
         }
       }
