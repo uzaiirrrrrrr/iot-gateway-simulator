@@ -19,6 +19,5 @@ tmp/
 run_simulator.bat
 db_init_test.js
 test/
-package-lock.json
-frontend/package-lock.json
-backend/package-lock.json
+
+
