@@ -179,20 +179,8 @@ const TrafficAnalytics = () => {
           ))}
         </div>
 
-        {/* Spike threshold slider */}
-        <div className="flex items-center gap-6 bg-slate-50 p-4 px-6 rounded-2xl border border-slate-200 flex-1 w-full xl:w-auto">
-          <div className="flex items-center gap-3 text-xs font-black text-slate-500 uppercase tracking-widest shrink-0">
-            <Sliders className="text-purple-600" size={16} />
-            Spike Trigger Limit:
-          </div>
-          <input 
-            type="range" min="1" max="200" 
-            value={spikeThreshold} 
-            onChange={(e) => setSpikeThreshold(parseInt(e.target.value))}
-            className="w-full h-1 bg-slate-200 rounded-lg appearance-none cursor-pointer accent-purple-500"
-          />
-          <div className="font-mono text-purple-600 font-black text-sm shrink-0">{spikeThreshold} PKTS</div>
-        </div>
+        {/* Spike threshold slider (Moved to graph) */}
+        <div className="flex-1 hidden xl:block"></div>
 
         {/* Exporter button */}
         <button
@@ -207,14 +195,24 @@ const TrafficAnalytics = () => {
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
         {/* Real-time ingestion charts */}
         <div className="lg:col-span-2 bg-white rounded-[2.5rem] border border-slate-200 shadow-sm p-8 relative overflow-hidden flex flex-col justify-between">
-          <div className="flex justify-between items-center mb-6">
+          <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-6">
             <div>
               <h3 className="text-lg font-black text-slate-900 tracking-tight">Virtual Network Throughput</h3>
               <p className="text-[10px] text-slate-400 font-bold uppercase tracking-widest mt-1">Symmetrical ingestion rates & spikes detection</p>
             </div>
-            <div className="flex items-center gap-2">
-              <span className="h-1.5 w-1.5 rounded-full bg-emerald-500 animate-pulse shadow-[0_0_8px_#10b981]" />
-              <span className="text-[9px] font-mono text-slate-400 uppercase font-black tracking-widest">Active Pipeline</span>
+            
+            <div className="flex items-center gap-4 bg-slate-50 p-2 px-4 rounded-xl border border-slate-200">
+              <div className="flex items-center gap-2 text-[10px] font-black text-slate-500 uppercase tracking-widest">
+                <Sliders className="text-purple-600" size={12} />
+                Spike Trigger:
+              </div>
+              <input 
+                type="range" min="1" max="200" 
+                value={spikeThreshold} 
+                onChange={(e) => setSpikeThreshold(parseInt(e.target.value))}
+                className="w-24 h-1 bg-slate-200 rounded-lg appearance-none cursor-pointer accent-purple-500"
+              />
+              <div className="font-mono text-purple-600 font-black text-[10px] w-12 text-right">{spikeThreshold} Pkt</div>
             </div>
           </div>
 
