@@ -11,6 +11,9 @@ import SecurityVisualization from './pages/SecurityVisualization';
 import TrafficAnalytics from './pages/TrafficAnalytics';
 import CloudSimulation from './pages/CloudSimulation';
 import Dashboard from './pages/Dashboard';
+import SystemHealth from './pages/SystemHealth';
+import Logs from './pages/Logs';
+import Reports from './pages/Reports';
 
 import Layout from './components/Layout';
 import PrivateRoute from './components/PrivateRoute';
@@ -32,6 +35,9 @@ function App() {
             <Route path="security" element={<SecurityVisualization />} />
             <Route path="analytics" element={<TrafficAnalytics />} />
             <Route path="cloud" element={<CloudSimulation />} />
+            <Route path="health" element={<SystemHealth />} />
+            <Route path="logs" element={<Logs />} />
+            <Route path="reports" element={<Reports />} />
           </Route>
         </Routes>
       </Router>

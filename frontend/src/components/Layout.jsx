@@ -4,7 +4,7 @@ import { motion } from 'framer-motion';
 import { AuthContext } from '../context/AuthContext';
 import { 
   LayoutDashboard, Server, Cpu, Activity, Shield, ShieldAlert, 
-  Terminal, FileText, LogOut, Menu, X, Cloud, History, UserCheck, Trophy
+  Terminal, FileText, LogOut, Menu, X, Cloud, History, UserCheck, Trophy, HeartPulse
 } from 'lucide-react';
 
 const Layout = () => {
@@ -32,6 +32,9 @@ const Layout = () => {
     { name: 'Security View', path: '/security', icon: <Shield size={20} />, roles: ['Admin', 'User', 'Viewer'] },
     { name: 'Traffic Analytics', path: '/analytics', icon: <Activity size={20} />, roles: ['Admin', 'User', 'Viewer'] },
     { name: 'Cloud Pipelines', path: '/cloud', icon: <Cloud size={20} />, roles: ['Admin', 'User', 'Viewer'] },
+    { name: 'Centralized Logs', path: '/logs', icon: <History size={20} />, roles: ['Admin', 'User', 'Viewer'] },
+    { name: 'Gateway Health', path: '/health', icon: <HeartPulse size={20} />, roles: ['Admin', 'User', 'Viewer'] },
+    { name: 'Reporting & Compliance', path: '/reports', icon: <FileText size={20} />, roles: ['Admin', 'User', 'Viewer'] },
   ];
 
   const filteredNavItems = navItems.filter(item => 
@@ -52,7 +55,7 @@ const Layout = () => {
           </div>
         </div>
         
-        <div className="flex-1 overflow-y-auto py-2 no-scrollbar">
+        <div className="flex-1 overflow-y-auto py-2 sidebar-scrollbar pr-1">
           <nav className="space-y-1 px-4">
             {filteredNavItems.map((item) => (
               <Link

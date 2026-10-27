@@ -60,3 +60,22 @@ button,
   scrollbar-width: thin;
   scrollbar-color: rgba(124, 58, 237, 0.4) transparent;
 }
+
+/* Dedicated visible sidebar scrollbar */
+.sidebar-scrollbar::-webkit-scrollbar {
+  width: 5px;
+}
+.sidebar-scrollbar::-webkit-scrollbar-track {
+  background: rgba(10, 12, 26, 0.8);
+}
+.sidebar-scrollbar::-webkit-scrollbar-thumb {
+  background: rgba(168, 85, 247, 0.45);
+  border-radius: 99px;
+}
+.sidebar-scrollbar::-webkit-scrollbar-thumb:hover {
+  background: rgba(168, 85, 247, 0.85);
+}
+.sidebar-scrollbar {
+  scrollbar-width: thin;
+  scrollbar-color: rgba(168, 85, 247, 0.45) rgba(10, 12, 26, 0.8);
+}
