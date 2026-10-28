@@ -469,10 +469,10 @@ const SystemHealth = () => {
             <div>
               <div className="flex items-center gap-2.5">
                 <h2 className="text-2xl font-black text-slate-900 tracking-tight">
-                  Gateway Health and Anomaly Detection
+                  Detect Anomalies and Monitor Health
                 </h2>
                 <span className="px-2.5 py-0.5 rounded-full text-[10px] font-black uppercase tracking-wider bg-purple-100 text-purple-700">
-                  Module 8
+                  Module 7
                 </span>
               </div>
               <p className="text-xs text-slate-500 mt-0.5">

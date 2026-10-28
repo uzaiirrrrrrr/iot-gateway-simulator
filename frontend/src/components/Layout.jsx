@@ -27,14 +27,14 @@ const Layout = () => {
 
   const navItems = [
     { name: 'Dashboard', path: '/dashboard', icon: <LayoutDashboard size={20} />, roles: ['Admin', 'User', 'Viewer'] },
-    { name: 'Gateways', path: '/gateways', icon: <Server size={20} />, roles: ['Admin', 'User', 'Viewer'] },
-    { name: 'Device Provision', path: '/devices', icon: <Cpu size={20} />, roles: ['Admin', 'User'] },
-    { name: 'Security View', path: '/security', icon: <Shield size={20} />, roles: ['Admin', 'User', 'Viewer'] },
-    { name: 'Traffic Analytics', path: '/analytics', icon: <Activity size={20} />, roles: ['Admin', 'User', 'Viewer'] },
-    { name: 'Cloud Pipelines', path: '/cloud', icon: <Cloud size={20} />, roles: ['Admin', 'User', 'Viewer'] },
-    { name: 'Centralized Logs', path: '/logs', icon: <History size={20} />, roles: ['Admin', 'User', 'Viewer'] },
-    { name: 'Gateway Health', path: '/health', icon: <HeartPulse size={20} />, roles: ['Admin', 'User', 'Viewer'] },
-    { name: 'Reporting & Compliance', path: '/reports', icon: <FileText size={20} />, roles: ['Admin', 'User', 'Viewer'] },
+    { name: 'Manage and Simulate Gateways', path: '/gateways', icon: <Server size={20} />, roles: ['Admin', 'User', 'Viewer'] },
+    { name: 'Provision and Map Devices', path: '/devices', icon: <Cpu size={20} />, roles: ['Admin', 'User'] },
+    { name: 'Visualize Secure and Insecure Traffic', path: '/security', icon: <Shield size={20} />, roles: ['Admin', 'User', 'Viewer'] },
+    { name: 'Monitor Traffic Analytics', path: '/analytics', icon: <Activity size={20} />, roles: ['Admin', 'User', 'Viewer'] },
+    { name: 'Simulate Cloud Pipelines', path: '/cloud', icon: <Cloud size={20} />, roles: ['Admin', 'User', 'Viewer'] },
+    { name: 'Detect Anomalies and Monitor Health', path: '/health', icon: <HeartPulse size={20} />, roles: ['Admin', 'User', 'Viewer'] },
+    { name: 'View Centralized Logs and Alerts', path: '/logs', icon: <History size={20} />, roles: ['Admin', 'User', 'Viewer'] },
+    { name: 'Generate Compliance Reports', path: '/reports', icon: <FileText size={20} />, roles: ['Admin', 'User', 'Viewer'] },
   ];
 
   const filteredNavItems = navItems.filter(item => 
@@ -44,7 +44,7 @@ const Layout = () => {
   return (
     <div className="flex h-screen bg-slate-100 overflow-hidden font-outfit">
       {/* Sidebar */}
-      <div className="w-64 bg-[#0a0c1a] text-white flex flex-col flex-shrink-0 border-r border-slate-800/50">
+      <div className="w-72 bg-[#0a0c1a] text-white flex flex-col flex-shrink-0 border-r border-slate-800/50">
         <div className="p-4 text-xl font-bold border-b border-slate-800/50 flex items-center gap-3">
           <div className="p-2 bg-purple-500/10 rounded-xl border border-purple-500/20">
             <Activity className="text-purple-400" size={24} />
@@ -56,21 +56,21 @@ const Layout = () => {
         </div>
         
         <div className="flex-1 overflow-y-auto py-2 sidebar-scrollbar pr-1">
-          <nav className="space-y-1 px-4">
+          <nav className="space-y-1 px-3">
             {filteredNavItems.map((item) => (
               <Link
                 key={item.name}
                 to={item.path}
-                className={`flex items-center gap-3 px-4 py-2 rounded-xl transition-all duration-300 group ${
+                className={`flex items-center gap-3 px-3.5 py-2.5 rounded-xl transition-all duration-300 group ${
                   location.pathname === item.path 
                     ? 'bg-purple-600 text-white shadow-lg shadow-purple-900/20' 
                     : 'text-slate-400 hover:bg-slate-800/50 hover:text-white'
                 }`}
               >
-                <div className={`${location.pathname === item.path ? 'text-white' : 'text-slate-500 group-hover:text-purple-400'} transition-colors`}>
+                <div className={`${location.pathname === item.path ? 'text-white' : 'text-slate-500 group-hover:text-purple-400'} flex-shrink-0 transition-colors`}>
                   {item.icon}
                 </div>
-                <span className="text-sm font-medium tracking-wide">{item.name}</span>
+                <span className="text-xs font-semibold tracking-wide leading-snug">{item.name}</span>
               </Link>
             ))}
           </nav>

@@ -534,9 +534,9 @@ const Logs = () => {
           </div>
           <div>
             <div className="flex items-center gap-2.5">
-              <h2 className="text-2xl font-black text-slate-900 tracking-tight">Centralized Logging and Alerts</h2>
+              <h2 className="text-2xl font-black text-slate-900 tracking-tight">View Centralized Logs and Alerts</h2>
               <span className="px-2.5 py-0.5 rounded-full text-[10px] font-black uppercase tracking-wider bg-purple-100 text-purple-700">
-                Module 7
+                Module 8
               </span>
             </div>
             <p className="text-xs text-slate-500 mt-0.5">

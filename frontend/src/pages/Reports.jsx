@@ -446,7 +446,7 @@ const Reports = () => {
           </div>
           <div>
             <div className="flex items-center gap-2.5">
-              <h2 className="text-2xl font-black text-slate-900 tracking-tight">Reporting and Compliance</h2>
+              <h2 className="text-2xl font-black text-slate-900 tracking-tight">Generate Compliance Reports</h2>
               <span className="px-2.5 py-0.5 rounded-full text-[10px] font-black uppercase tracking-wider bg-purple-100 text-purple-700">
                 Module 9
               </span>

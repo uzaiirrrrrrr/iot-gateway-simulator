@@ -28,18 +28,18 @@ A high-fidelity, production-ready IoT Gateway Simulator developed for a Final Ye
 4. **Access**: Navigate to `http://localhost:5173` in your browser.
 
 ## 🛡️ Module Integration Matrix
-1. **Auth & RBAC**: Integrated system-wide.
-2. **Dashboard**: Traffic Trends & Real-time Charts.
-3. **Gateways**: Gateway Infrastructure Management.
-4. **Device Provision**: IoT Device Onboarding.
-5. **Attack Sandbox**: Vulnerability & Stress Testing.
-6. **Training Lab**: Interactive Security Drills.
-7. **Network Traffic**: Secure vs. Insecure Visualizer.
-8. **Cloud Pipeline**: Edge-to-Cloud Sync Simulation.
-9. **System Health**: Anomaly Detection & Heartbeats.
-10. **Security Audit**: User Behavior & Access Ledger.
-11. **System Logs**: Technical Event Journal.
-12. **Compliance Reports**: Document Generation.
+1. **Dashboard**: Traffic Trends, Network Nodes & Real-time Charts.
+2. **Manage and Simulate Gateways**: Gateway infrastructure management & simulation.
+3. **Provision and Map Devices**: IoT device registration & gateway drag-and-drop mapping.
+4. **Visualize Secure and Insecure Traffic**: Real-time packet flow visualization (TLS 1.3 vs Plaintext inspection).
+5. **Monitor Traffic Analytics**: Packet throughput tracking, bandwidth analysis & traffic spike anomaly alerts.
+6. **Simulate Cloud Pipelines**: Multi-cloud broker streaming (AWS/Azure/GCP) & link latency simulation.
+7. **Detect Anomalies and Monitor Health**: Real-time heartbeat tracking & AI anomaly diagnostics.
+8. **View Centralized Logs and Alerts**: Unified system event journal, severity sorting & alert storage.
+9. **Generate Compliance Reports**: Regulatory compliance verification (ISO 27001) & PDF document generation.
+10. **Perform Simulation Training**: Interactive guided security training drills & operational exercises.
+11. **Simulate Cyber Attacks and Defenses**: Attack sandbox simulating DDoS, XML Injection, and brute force vectors.
+12. **Audit User Behavior and Access**: Detailed operator access tracking, privilege escalation audits & audit trails.
 
 ## 🎓 Final Year Project (FYP) Credits
 Developed as a comprehensive solution for secure IoT gateway operations and visualization.
